@@ -1,3 +1,13 @@
+---
+title: Rapquiz
+emoji: 🎤
+colorFrom: red
+colorTo: yellow
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # 🎤 RAPQUIZ — Quiz o Polskim Rapie
 
 > **Status**: Faza planowania — marzec 2026
