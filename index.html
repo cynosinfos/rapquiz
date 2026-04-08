@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAPQUIZ — Quiz o Polskim Rapie</title>
+  <meta name="description" content="Sprawdź swoją wiedzę o polskim hip-hopie! Pytania z trzech epok, tryb multiplayer i codzienne wyzwania." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=VT323&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="manifest" href="manifest.json" />
+</head>
+<body>
+
+<!-- Animated background -->
+<div class="bg-canvas">
+  <div class="floating-tags" id="floatingTags"></div>
+</div>
+
+<div id="app">
+
+
+
+  <!-- ═══════════════════ MAIN ═══════════════════ -->
+  <main class="with-sidebar">
+
+    <!-- ── Lewa: Premiery (USUNIĘTO) ── -->
+
+    <!-- ── Środek: Menu ── -->
+    <section class="center-menu" id="menuView">
+
+      <!-- Logo + tytuł -->
+      <div class="logo-wrap">
+        <img
+          src="assets/images/logo.png"
+          alt="RAPQUIZ"
+          class="main-logo"
+          onerror="this.replaceWith(document.getElementById('logoFallback').content.cloneNode(true))"
+        />
+        <template id="logoFallback">
+          <div style="font-family:var(--font-mono);font-size:3rem;font-weight:700;color:var(--accent-gold);letter-spacing:8px;text-shadow: 0 0 20px rgba(255, 234, 0, 0.4), 4px 4px 0px rgba(230, 0, 0, 0.8);">RAPQUIZ</div>
+        </template>
+        <span class="logo-subtitle">Quiz o Polskim Hip-Hopie</span>
+      </div>
+
+      <!-- Przyciski -->
+      <div class="menu-buttons">
+
+        <button class="btn btn-primary" id="btnStart" onclick="startGame(false)">
+          ▶&nbsp; GRASZ KLASYCZNIE (20 PYTAŃ)
+        </button>
+
+        <button class="btn btn-primary" id="btnStartEndless" onclick="startGame(true)" style="background:var(--accent-orange); color:#000;">
+          ♾️&nbsp; NIESKOŃCZONA GRA
+        </button>
+
+        <button class="btn btn-secondary" id="btnRoom" onclick="createRoom()">
+          🔴&nbsp; UTWÓRZ POKÓJ
+        </button>
+
+        <button class="btn btn-daily" id="btnDaily" onclick="dailyChallenge()">
+          📅&nbsp; CODZIENNE WYZWANIE
+        </button>
+
+        <button class="btn btn-outline" id="btnTournament" onclick="openTournament()">
+          🏆&nbsp; TURNIEJ
+        </button>
+        
+        <button class="btn btn-outline" id="btnPropose" onclick="showSubmitQuestionView()">
+          ✍️&nbsp; DODAJ PYTANIE
+        </button>
+
+        <div style="display:flex; gap:10px; width:100%;">
+          <button class="btn btn-outline" id="btnInfo" onclick="openInfo()" style="flex:1">
+            ℹ️&nbsp; INFO
+          </button>
+          <button class="btn btn-outline" id="btnShare" onclick="shareGame()" style="flex:1; border-color:var(--accent-blue); color:var(--accent-blue);">
+            🔗&nbsp; UDOSTĘPNIJ
+          </button>
+        </div>
+
+      </div>
+
+      <span class="version-badge">v0.1.0 — ALPHA</span>
+
+    </section>
+
+    <!-- ── Środek: Wybór Kategorii ── -->
+    <section class="center-content game-setup" id="setupView" style="display:none;">
+      <h2 class="view-title">WYBIERZ KATEGORIĘ</h2>
+      <div class="category-grid">
+        <button class="btn btn-outline" onclick="initGame('1990-2010')">🕰️ 1990–2010</button>
+        <button class="btn btn-outline" onclick="initGame('2010-2020')">🔥 2010–2020</button>
+        <button class="btn btn-outline" onclick="initGame('2020-now')">🎧 2020–teraz</button>
+        <button class="btn btn-outline" onclick="initGame('wszystko')">🌍 WSZYSTKO</button>
+      </div>
+      <button class="btn btn-secondary" style="margin-top:20px" onclick="showMenu()">↩ POWRÓT</button>
+    </section>
+
+    <!-- ── Środek: Multiplayer Hub (Utwórz/Dołącz) ── -->
+    <section class="center-content game-setup" id="multiplayerHubView" style="display:none;">
+      <h2 class="view-title">🔴 MULTIPLAYER</h2>
+      <div class="category-grid" style="display:flex; flex-direction:column; gap:20px; align-items:center;">
+        <button class="btn btn-primary" onclick="multiplayerHostRoom()" style="width:100%; max-width:300px;">UTWÓRZ POKÓJ</button>
+        <div style="font-size:1.2rem; margin:10px 0;">LUB</div>
+        <div style="display:flex; gap:10px; width:100%; max-width:300px;">
+          <input type="text" id="joinRoomCode" placeholder="KOD NP. RAP-123" class="pixel-input" style="flex:1;" />
+          <button class="btn btn-secondary" onclick="multiplayerJoinRoom()">DOŁĄCZ</button>
+        </div>
+      </div>
+      <p id="multiplayerError" class="auth-error" style="margin-top:20px;"></p>
+      <button class="btn btn-outline" style="margin-top:20px" onclick="showMenu()">↩ POWRÓT</button>
+    </section>
+
+    <!-- ── Środek: Lobby ── -->
+    <section class="center-content game-setup" id="lobbyView" style="display:none;">
+      <h2 class="view-title gold-text">POCZEKALNIA</h2>
+      <div style="margin:20px 0;">
+        <p style="font-size:1.2rem; margin-bottom:10px;">KOD POKOJU:</p>
+        <div id="lobbyCodeLabel" style="font-size:2.5rem; font-family:var(--font-mono); color:var(--accent-yellow); letter-spacing:5px;">---</div>
+      </div>
+      <div class="category-grid" id="lobbyPlayersContainer" style="display:flex; flex-direction:column; gap:15px; margin-top:30px;">
+        <div id="lobbyPlayer1" style="font-size:1.5rem;">CZEKAM NA CIEBIE...</div>
+        <div id="lobbyPlayer2" style="font-size:1.5rem; color:var(--text-dim);">CZEKAM NA INNYCH GRACZY...</div>
+        <div id="lobbyPlayer3" style="font-size:1.2rem; color:var(--text-dim);">...</div>
+        <div id="lobbyPlayer4" style="font-size:1.2rem; color:var(--text-dim);">...</div>
+      </div>
+      
+      <!-- Host Only controls -->
+      <div id="lobbyHostControls" style="display:none; margin-top:30px;">
+        <p style="margin-bottom:10px;">WYBIERZ KATEGORIĘ (HOST):</p>
+        <div class="category-grid" style="grid-template-columns: 1fr 1fr;">
+          <button class="btn btn-outline" onclick="multiplayerStartGame('1990-2010')">1990–2010</button>
+          <button class="btn btn-outline" onclick="multiplayerStartGame('2010-2020')">2010–2020</button>
+          <button class="btn btn-outline" onclick="multiplayerStartGame('2020-now')">2020–teraz</button>
+          <button class="btn btn-outline" onclick="multiplayerStartGame('wszystko')">WSZYSTKO</button>
+        </div>
+      </div>
+
+      <button class="btn btn-outline" style="margin-top:40px" onclick="multiplayerLeaveLobby()">↩ WYJDŹ</button>
+    </section>
+
+    <!-- ── Środek: Daily Setup ── -->
+    <section class="center-content game-setup" id="dailySetupView" style="display:none;">
+      <h2 class="view-title gold-text">📅 CODZIENNE WYZWANIE</h2>
+      <div style="margin:20px 0; text-align:center;">
+        <p style="font-size:1.2rem; margin-bottom:10px;">DATA OPORU:</p>
+        <div id="dailyDateLabel" style="font-size:2rem; font-family:var(--font-mono); color:var(--accent-yellow); letter-spacing:5px;">----</div>
+      </div>
+      <p style="color:var(--text-dim); text-align:center; max-width:400px; margin:0 auto;">
+        Masz tylko jedną próbę w ciągu dnia! Odpowiedz na 10 ujednoliconych dla wszystkich graczy pytań.
+        Bez żyć i lifelines — liczy się czysta wiedza.
+      </p>
+      
+      <div style="margin-top:30px; display:flex; flex-direction:column; align-items:center; gap:15px;">
+         <button class="btn btn-primary" id="btnStartDaily" onclick="initDailyGame()" style="width:100%; max-width:300px;">ODPAL WYZWANIE</button>
+         <button class="btn btn-outline" style="width:100%; max-width:300px;" onclick="showMenu()">↩ POWRÓT</button>
+      </div>
+      <p id="dailyError" class="auth-error" style="margin-top:20px; text-align:center;"></p>
+    </section>
+
+    <!-- ── Turniej: Hub ── -->
+    <section class="center-content game-setup" id="tournamentHubView" style="display:none;">
+      <h2 class="view-title">🏆 TURNIEJ (4 GRACZY)</h2>
+      <div class="category-grid" style="display:flex; flex-direction:column; gap:20px; align-items:center;">
+        <button class="btn btn-primary" onclick="tournamentHost()" style="width:100%; max-width:300px;">STWÓRZ TURNIEJ</button>
+        <div style="font-size:1.2rem; margin:10px 0;">LUB</div>
+        <div style="display:flex; gap:10px; width:100%; max-width:300px;">
+          <input type="text" id="joinTournamentCode" placeholder="KOD NP. TRN-123" class="pixel-input" style="flex:1;" />
+          <button class="btn btn-secondary" onclick="tournamentJoin()">DOŁĄCZ</button>
+        </div>
+      </div>
+      <p id="tournamentError" class="auth-error" style="margin-top:20px;"></p>
+      <button class="btn btn-outline" style="margin-top:20px" onclick="showMenu()">↩ POWRÓT</button>
+    </section>
+
+    <!-- ── Turniej: Lobby & Drabinka ── -->
+    <section class="center-content game-setup" id="tournamentBracketView" style="display:none; width: 90%; max-width: 800px;">
+      <h2 class="view-title gold-text">DRABINKA TURNIEJOWA</h2>
+      <p style="margin-bottom:10px;">KOD TURNIEJU: <strong id="tourneyCodeLabel" style="color:var(--accent-yellow)">---</strong></p>
+      
+      <div class="bracket-container" style="display:flex; justify-content:space-around; margin: 30px 0; width: 100%;">
+          <div class="bracket-column" id="bracketSemis" style="display:flex; flex-direction:column; gap:20px; width:45%;">
+             <div class="match-box" style="border:1px solid #444; padding:10px; text-align:center;">
+                <div id="t_p1" style="border-bottom:1px solid #333; padding:5px;">Oczekujący...</div>
+                <div id="t_p2" style="padding:5px;">Oczekujący...</div>
+             </div>
+             <div class="match-box" style="border:1px solid #444; padding:10px; text-align:center;">
+                <div id="t_p3" style="border-bottom:1px solid #333; padding:5px;">Oczekujący...</div>
+                <div id="t_p4" style="padding:5px;">Oczekujący...</div>
+             </div>
+          </div>
+          <div class="bracket-column" id="bracketFinal" style="display:flex; flex-direction:column; justify-content:center; width:45%;">
+             <div class="match-box" style="border:2px solid var(--accent-yellow); padding:10px; text-align:center; box-shadow: 0 0 10px rgba(245,197,24,0.3);">
+                <div id="t_f1" style="border-bottom:1px solid #333; padding:5px; color:var(--text-dim);">Zwycięzca Pólfinał 1</div>
+                <div id="t_f2" style="padding:5px; color:var(--text-dim);">Zwycięzca Półfinał 2</div>
+             </div>
+             <div id="tournamentWinnerBox" style="margin-top:20px; text-align:center; display:none;">
+                <h3 class="gold-text">🏆 MISTRZ 🏆</h3>
+                <div id="t_champ" style="font-size:1.5rem; text-transform:uppercase;">---</div>
+             </div>
+          </div>
+      </div>
+      
+      <div id="tourneyHostControls" style="display:none; text-align:center;">
+         <p style="margin-bottom:10px;">Gdy uzbiera się 4 graczy:</p>
+         <button class="btn btn-primary" id="btnStartTourney" disabled onclick="tournamentStartGame('wszystko')">ROZPOCZNIJ TURNIEJ</button>
+      </div>
+      
+      <p id="tourneyStatusMsg" style="margin-top:20px; color:var(--accent-orange);"></p>
+      
+      <button class="btn btn-outline" style="margin-top:30px" onclick="tournamentLeave()">↩ OPUŚĆ</button>
+    </section>
+
+    <!-- ── Środek: Dodaj Pytanie ── -->
+    <section class="center-content game-setup" id="submitQuestionView" style="display:none; width:100%; max-width:600px;">
+      <h2 class="view-title" style="color:var(--accent-blue); text-shadow: 2px 2px 0 var(--border);">📝 DODAJ PYTANIE</h2>
+      
+      <div style="width:100%; display:flex; flex-direction:column; gap:15px; text-align:left;">
+          <input type="text" id="sq_question" placeholder="Zadaj tutaj pytanie..." class="pixel-input" />
+          
+          <select id="sq_category" class="pixel-input" style="cursor:pointer; color:var(--text-dim);" onchange="this.style.color='#fff'">
+             <option value="" disabled selected>-- Wybierz epokę (Kategorię) --</option>
+             <option value="1990-2010">1990-2010 (Złota Era i Pionierzy)</option>
+             <option value="2010-2020">2010-2020 (Nowa Fala i Rozwój)</option>
+             <option value="2020-now">2020-teraz (Współczesny Trap/Rap)</option>
+          </select>
+          
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+             <input type="text" id="sq_a0" placeholder="ODP. 1" class="pixel-input" />
+             <input type="text" id="sq_a1" placeholder="ODP. 2" class="pixel-input" />
+             <input type="text" id="sq_a2" placeholder="ODP. 3" class="pixel-input" />
+             <input type="text" id="sq_a3" placeholder="ODP. 4" class="pixel-input" />
+          </div>
+          
+          <select id="sq_correct" class="pixel-input" style="cursor:pointer; color:var(--text-dim);" onchange="this.style.color='#fff'">
+             <option value="" disabled selected>-- Która odpowiedź jest prawidłowa? --</option>
+             <option value="0">Tylko ODP. 1 (A)</option>
+             <option value="1">Tylko ODP. 2 (B)</option>
+             <option value="2">Tylko ODP. 3 (C)</option>
+             <option value="3">Tylko ODP. 4 (D)</option>
+          </select>
+          
+          <input type="text" id="sq_hint" placeholder="[Opcjonalnie] Krótka podpowiedź..." class="pixel-input" />
+          
+          <button class="btn btn-primary" id="btnSubmitQuestion" onclick="submitUserQuestion()" style="margin-top:20px; background:linear-gradient(180deg, #4a90e2 0%, #0056b3 100%);">WYŚLIJ PROPOZYCJĘ</button>
+      </div>
+      
+      <p id="sq_status" style="margin-top:15px; font-family:var(--font-main); font-weight:bold; height:20px; text-align:center;"></p>
+      <button class="btn btn-outline" style="margin-top:20px;" onclick="showMenu()">↩ Wyluzuj, wracam</button>
+    </section>
+
+    <!-- ── Środek: Widok Gry ── -->
+    <section class="center-content game-view" id="gameView" style="display:none;">
+      <div class="game-header">
+        <div class="game-stats" id="gameStatsContainer">
+          WYNIK: <span id="gameScore" class="gold-text">0</span> | BŁĘDY: <span id="gameMistakes" class="red-text">0/2</span>
+        </div>
+        <div class="game-timer">
+          <div class="timer-bar" id="timerBar"></div>
+        </div>
+      </div>
+      
+      <div class="question-box">
+        <h3 id="questionText">Ładowanie pytania...</h3>
+      </div>
+
+      <div class="answers-grid" id="answersGrid">
+        <!-- Odpowiedzi generowane przez JS -->
+      </div>
+
+      <div class="lifelines-bar">
+        <button class="lifeline-btn" id="ll-5050" onclick="useLifeline('5050')" title="Pół na Pół">💡</button>
+        <button class="lifeline-btn" id="ll-phone" onclick="useLifeline('phone')" title="Telefon do Ziąbka">📞</button>
+        <button class="lifeline-btn" id="ll-audience" onclick="useLifeline('audience')" title="Głos Tłumu">📊</button>
+        <button class="lifeline-btn" id="ll-skip" onclick="useLifeline('skip')" title="Pomiń Pytanie (1 raz)">⏭️</button>
+      </div>
+      
+      <!-- Pływające powiadomienia o zyskanym streak/score -->
+      <div id="gameNotification" class="game-notification"></div>
+    </section>
+
+    <!-- ── Środek: Koniec Gry ── -->
+    <section class="center-content game-over" id="gameOverView" style="display:none;">
+      <h2 class="view-title red-text">KONIEC GRY</h2>
+      <div class="final-stats">
+        <p>TWÓJ WYNIK: <span id="finalScore" class="gold-text">0</span></p>
+        <p>DOBRA PASSA: <span id="finalStreak">0</span></p>
+      </div>
+      <p id="gameOverMsg" class="game-over-msg">Niezła próba!</p>
+      <div id="mpScoreboard" style="display:none; margin-top:20px; background:rgba(0,0,0,0.5); padding:15px; border:1px solid #444; width:100%; max-width:400px; margin-left:auto; margin-right:auto;"></div>
+      <div class="menu-buttons" style="margin-top: 30px; flex-direction:row; justify-content:center;">
+        <button class="btn btn-outline" style="border-color:var(--accent-blue); color:var(--accent-blue);" onclick="shareScore()">🔗 UDOSTĘPNIJ WYNIK</button>
+        <button class="btn btn-primary" onclick="showMenu()">ZAKOŃCZ</button>
+      </div>
+    </section>
+
+    <!-- ── Prawa: Ranking ── -->
+    <aside class="sidebar sidebar--right" id="sidebarRight">
+      <div class="sidebar-header">
+        <span class="icon">🏆</span>
+        <h3>Top Gracze — Suma Pkt</h3>
+      </div>
+      <div class="sidebar-content" id="rankingList">
+        <div class="sidebar-loading">Ładowanie rankingu...</div>
+      </div>
+    </aside>
+
+    <!-- ── Środek: Info View ── -->
+    <section class="center-content game-setup" id="infoView" style="display:none;">
+      <h2 class="view-title" style="color:var(--accent-blue);">ℹ️ INFORMACJE</h2>
+      <div class="pixel-input" style="text-align:left; background: rgba(0,0,0,0.6); margin-top: 20px; line-height: 1.6; border: 2px solid #555;">
+        <h3 class="gold-text">O GRZE RAPQUIZ</h3>
+        <p style="margin-top:10px; color:var(--text-dim);">
+          Rap Quiz to drugi mój projekt po Retro Rap Battle w którym chciałbym skonfrontować na przeciwko siebie słuchaczy jak i raperów i ludzi z branży.<br>
+          Tym razem chodzi o wiedzę a propos Polskiego rapu. Jest kilka trybów jak Turniej dla 4 osób czy gra we 2. Można również sprawdzić swoją wiedze grając samemu.<br><br>
+          Niektóre pytania mogą zawierać treść/fragmenty z serii książek Jacka Balińskiego "To nie jest Hip-Hop. Rozmowy".<br>
+          Zachęcam do przeczytania książek jak i obserwowania autora na Instagramie - <a href="https://www.instagram.com/jacek_balinski/" target="_blank" style="color:var(--accent-yellow); text-decoration:underline;"><strong>@jacek_balinski</strong></a>.
+        </p>
+        <p style="margin-top:15px; color:var(--text-main);">
+          OBSERWUJ AUTORA PO WIĘCEJ INFORMACJI: <a href="https://www.instagram.com/adammanski/" target="_blank" style="color:var(--accent-yellow); text-decoration:underline;"><strong>@adammanski</strong></a>
+        </p>
+        
+        <h3 class="gold-text" style="margin-top:25px;">ZASADY I TRYBY</h3>
+        <ul style="margin-top:10px; padding-left: 20px; color:var(--text-dim);">
+           <li><strong>KLASYCZNA GRA:</strong> Standardowa rozgrywka na 20 pytań, dopóki nie popełnisz 2 błędów.</li>
+           <li><strong>NIESKOŃCZONA GRA:</strong> Pula pytań nie ma końca – grasz, aż wyczerpiesz kategorię lub popełnisz błąd.</li>
+           <li><strong>MULTIPLAYER / TURNIEJ:</strong> Kodowane Pokoje, gdzie zmierzysz się 1v1 lub w drabince e-sportowej dla 4 osób. Kto szybciej odpowie, ten dostaje więcej punktów (od +1 do +4)!</li>
+        </ul>
+      </div>
+      <div style="display:flex; justify-content:center; gap: 15px; margin-top: 30px; width: 100%;">
+          <button class="btn btn-outline" style="flex:1; max-width:200px;" onclick="showMenu()">↩ Wyluzuj, wracam</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ═══════════════════ MODAL LOGOWANIA ═══════════════════ -->
+  <div id="authModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content auth-modal">
+      <button class="modal-close" onclick="closeAuthModal()">✖</button>
+      <h2 id="authTitle" class="modal-title">LOGOWANIE</h2>
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Zaloguj</button>
+        <button class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">Zarejestruj</button>
+      </div>
+      <form id="authForm" onsubmit="handleAuthSubmit(event)">
+        <input type="text" id="authNick" placeholder="TWÓJ NICK" required minlength="3" maxlength="20" class="pixel-input" />
+        <input type="password" id="authPass" placeholder="HASŁO" required class="pixel-input" />
+        <div id="registerExtra" style="display:none;">
+          <input type="text" id="authSecAnswer" placeholder="PIERWSZY IDOL RAPOWY? (Opcjonalnie)" class="pixel-input" />
+          <p class="auth-hint">Odpowiedź pozwoli zresetować hasło w razie zgubienia.</p>
+        </div>
+        <p id="authError" class="auth-error"></p>
+        <button type="submit" class="btn btn-primary" id="authSubmitBtn" style="width:100%">WEJDŹ DO GRY</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ MODAL PROFILU / ODZNAKI ═══════════════════ -->
+  <div id="profileModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content auth-modal" style="max-width: 600px; width: 90%;">
+      <button class="modal-close" onclick="document.getElementById('profileModal').style.display='none'">✖</button>
+      <h2 class="modal-title">TWÓJ PROFIL</h2>
+      
+      <div style="display:flex; justify-content:space-between; margin-bottom: 20px;">
+         <div style="text-align:left;">
+            <p>NICK: <strong id="profNick" class="gold-text">---</strong></p>
+            <p>ROZEGRANE GRY: <strong id="profGames">0</strong></p>
+         </div>
+         <div style="text-align:right;">
+            <p>NAJLEPSZY WYNIK: <strong id="profHighscore" class="gold-text">0</strong></p>
+            <p style="margin-top:6px;">SUMA PKT: <strong id="profTotalScore" class="gold-text">0</strong></p>
+         </div>
+      </div>
+      
+      <h3 style="border-bottom: 1px solid #444; padding-bottom:5px; margin-bottom:15px; text-align:left;">WIRTUALNE ODZNAKI</h3>
+      <div id="badgesContainer" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap:15px; text-align:center;">
+         <div class="badge-item" id="badge_rookie" style="opacity:0.3; filter:grayscale(1);">
+            <div style="font-size:2rem;">🎙️</div><div style="font-size:0.8rem;">MC ROOKIE</div>
+         </div>
+         <div class="badge-item" id="badge_zlotaera" style="opacity:0.3; filter:grayscale(1);">
+            <div style="font-size:2rem;">🏆</div><div style="font-size:0.8rem;">ZŁOTA ERA</div>
+         </div>
+         <div class="badge-item" id="badge_diamond" style="opacity:0.3; filter:grayscale(1);">
+            <div style="font-size:2rem;">💎</div><div style="font-size:0.8rem;">DIAMOND DISC</div>
+         </div>
+         <div class="badge-item" id="badge_milczacy" style="opacity:0.3; filter:grayscale(1);">
+            <div style="font-size:2rem;">🤫</div><div style="font-size:0.8rem;">MILCZĄCY ŚWIADEK</div>
+         </div>
+         <div class="badge-item" id="badge_freestyle" style="opacity:0.3; filter:grayscale(1);">
+            <div style="font-size:2rem;">⚡</div><div style="font-size:0.8rem;">FREESTYLE KING</div>
+         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ FOOTER ═══════════════════ -->
+  <footer style="cursor: pointer" onclick="checkAuthAndOpen()">
+    <div class="footer-status">
+      <div class="status-dot"></div>
+      <span id="playerStatus">OFFLINE - KLIKNIJ ABY ZALOGOWAĆ</span>
+    </div>
+    <span>RAPQUIZ © 2026</span>
+    <span id="footerTime"></span>
+  </footer>
+
+</div><!-- /#app -->
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="js/data/questions.js"></script>
+<script src="js/menu.js"></script>
+<script src="js/game.js"></script>
+<script src="js/multiplayer.js"></script>
+<script src="js/tournament.js"></script>
+</body>
+</html>
