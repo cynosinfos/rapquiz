@@ -5,11 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RAPQUIZ — Quiz o Polskim Rapie</title>
   <meta name="description" content="Sprawdź swoją wiedzę o polskim hip-hopie! Pytania z trzech epok, tryb multiplayer i codzienne wyzwania." />
+  
+  <!-- Facebook / Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://rapq.pl/">
+  <meta property="og:title" content="RAPQUIZ — Quiz o Polskim Rapie">
+  <meta property="og:description" content="Czy znasz historię polskiego hip-hopu? Sprawdź się w największym rapowym quizie online!">
+  <meta property="og:image" content="https://rapq.pl/assets/images/logo.png">
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=VT323&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <link rel="manifest" href="manifest.json" />
+  <style>
+     .game-stats { font-size: 1.5em; }
+  </style>
 </head>
 <body>
 
@@ -20,12 +31,22 @@
 
 <div id="app">
 
-
+  <!-- ═══════════════════ TOP AUTH BAR ═══════════════════ -->
+  <div class="top-auth-bar" onclick="checkAuthAndOpen()">
+    <div class="status-dot"></div>
+    <span id="playerStatus">OFFLINE - KLIKNIJ ABY ZALOGOWAĆ</span>
+  </div>
 
   <!-- ═══════════════════ MAIN ═══════════════════ -->
   <main class="with-sidebar">
 
-    <!-- ── Lewa: Premiery (USUNIĘTO) ── -->
+    <!-- ── Lewa: Reklama ── -->
+    <aside class="sidebar sidebar--left" id="sidebarLeft">
+      <div class="ad-banner" style="width:100%; margin-top: 100px; border: 2px dashed var(--accent-gold); background: rgba(0,0,0,0.4); padding: 15px; text-align: center; color: var(--text-dim); font-size: 0.9rem; cursor: pointer; transition: all 0.3s ease;" onclick="openInfo()" onmouseover="this.style.borderColor='#00ff41'; this.style.color='#fff'" onmouseout="this.style.borderColor='var(--accent-gold)'; this.style.color='var(--text-dim)'">
+        MIEJSCE DLA CIEBIE<br>
+        <span style="color:var(--accent-yellow); font-size:0.8rem; font-weight:bold;">KONTAKT W DZIALE INFO</span>
+      </div>
+    </aside>
 
     <!-- ── Środek: Menu ── -->
     <section class="center-menu" id="menuView">
@@ -101,6 +122,15 @@
     <!-- ── Środek: Multiplayer Hub (Utwórz/Dołącz) ── -->
     <section class="center-content game-setup" id="multiplayerHubView" style="display:none;">
       <h2 class="view-title">🔴 MULTIPLAYER</h2>
+      <div style="background:rgba(0,0,0,0.5); padding:15px; border:1px solid #444; border-radius:8px; margin-bottom:20px; width:100%; max-width:400px; text-align:left;">
+        <h3 class="gold-text" style="margin-top:0; font-size:1.1rem;">ZASADY GRY MULTIPLAYER:</h3>
+        <ul style="color:var(--text-dim); margin-top:10px; padding-left:20px; font-size:0.9rem; line-height:1.4;">
+            <li>Gra w czasie rzeczywistym. <strong>Pokój do 10 graczy jednocześnie.</strong></li>
+            <li>15 sekund na wybór odpowiedzi. Kto szybciej trafi, zgarnia więcej punktów (+1 do +4).</li>
+            <li>Brak kół ratunkowych – tutaj liczy się czysty refleks i wiedza!</li>
+            <li>Zwycięzca jest tylko jeden – ten, kto zgromadzi najwięcej punktów po 20 pytaniach.</li>
+        </ul>
+      </div>
       <div class="category-grid" style="display:flex; flex-direction:column; gap:20px; align-items:center;">
         <button class="btn btn-primary" onclick="multiplayerHostRoom()" style="width:100%; max-width:300px;">UTWÓRZ POKÓJ</button>
         <div style="font-size:1.2rem; margin:10px 0;">LUB</div>
@@ -121,10 +151,7 @@
         <div id="lobbyCodeLabel" style="font-size:2.5rem; font-family:var(--font-mono); color:var(--accent-yellow); letter-spacing:5px;">---</div>
       </div>
       <div class="category-grid" id="lobbyPlayersContainer" style="display:flex; flex-direction:column; gap:15px; margin-top:30px;">
-        <div id="lobbyPlayer1" style="font-size:1.5rem;">CZEKAM NA CIEBIE...</div>
-        <div id="lobbyPlayer2" style="font-size:1.5rem; color:var(--text-dim);">CZEKAM NA INNYCH GRACZY...</div>
-        <div id="lobbyPlayer3" style="font-size:1.2rem; color:var(--text-dim);">...</div>
-        <div id="lobbyPlayer4" style="font-size:1.2rem; color:var(--text-dim);">...</div>
+        <!-- Lista graczy generowana dynamicznie przez JS -->
       </div>
       
       <!-- Host Only controls -->
@@ -162,7 +189,16 @@
 
     <!-- ── Turniej: Hub ── -->
     <section class="center-content game-setup" id="tournamentHubView" style="display:none;">
-      <h2 class="view-title">🏆 TURNIEJ (4 GRACZY)</h2>
+      <h2 class="view-title">🏆 TURNIEJ: IGRZYSKA ŚMIERCI</h2>
+      <div style="background:rgba(0,0,0,0.5); padding:15px; border:1px solid #444; border-radius:8px; margin-bottom:20px; width:100%; max-width:400px; text-align:left;">
+        <h3 class="gold-text" style="margin-top:0; font-size:1.1rem;">ZASADY TURNIEJU:</h3>
+        <ul style="color:var(--text-dim); margin-top:10px; padding-left:20px; font-size:0.9rem; line-height:1.4;">
+            <li>Tryb Eliminacji: <strong>Grasz przeciwko nawet 20 graczom na raz!</strong></li>
+            <li>Zasada Suddeen Death: <strong>Jedna zła odpowiedź = natychmiastowe odpadnięcie.</strong></li>
+            <li>Gramy do ostatniego ocalałego lub do końca puli (20 pytań).</li>
+            <li>To najtrudniejszy tryb w grze – tylko dla prawdziwych ekspertów.</li>
+        </ul>
+      </div>
       <div class="category-grid" style="display:flex; flex-direction:column; gap:20px; align-items:center;">
         <button class="btn btn-primary" onclick="tournamentHost()" style="width:100%; max-width:300px;">STWÓRZ TURNIEJ</button>
         <div style="font-size:1.2rem; margin:10px 0;">LUB</div>
@@ -175,49 +211,13 @@
       <button class="btn btn-outline" style="margin-top:20px" onclick="showMenu()">↩ POWRÓT</button>
     </section>
 
-    <!-- ── Turniej: Lobby & Drabinka ── -->
-    <section class="center-content game-setup" id="tournamentBracketView" style="display:none; width: 90%; max-width: 800px;">
-      <h2 class="view-title gold-text">DRABINKA TURNIEJOWA</h2>
-      <p style="margin-bottom:10px;">KOD TURNIEJU: <strong id="tourneyCodeLabel" style="color:var(--accent-yellow)">---</strong></p>
-      
-      <div class="bracket-container" style="display:flex; justify-content:space-around; margin: 30px 0; width: 100%;">
-          <div class="bracket-column" id="bracketSemis" style="display:flex; flex-direction:column; gap:20px; width:45%;">
-             <div class="match-box" style="border:1px solid #444; padding:10px; text-align:center;">
-                <div id="t_p1" style="border-bottom:1px solid #333; padding:5px;">Oczekujący...</div>
-                <div id="t_p2" style="padding:5px;">Oczekujący...</div>
-             </div>
-             <div class="match-box" style="border:1px solid #444; padding:10px; text-align:center;">
-                <div id="t_p3" style="border-bottom:1px solid #333; padding:5px;">Oczekujący...</div>
-                <div id="t_p4" style="padding:5px;">Oczekujący...</div>
-             </div>
-          </div>
-          <div class="bracket-column" id="bracketFinal" style="display:flex; flex-direction:column; justify-content:center; width:45%;">
-             <div class="match-box" style="border:2px solid var(--accent-yellow); padding:10px; text-align:center; box-shadow: 0 0 10px rgba(245,197,24,0.3);">
-                <div id="t_f1" style="border-bottom:1px solid #333; padding:5px; color:var(--text-dim);">Zwycięzca Pólfinał 1</div>
-                <div id="t_f2" style="padding:5px; color:var(--text-dim);">Zwycięzca Półfinał 2</div>
-             </div>
-             <div id="tournamentWinnerBox" style="margin-top:20px; text-align:center; display:none;">
-                <h3 class="gold-text">🏆 MISTRZ 🏆</h3>
-                <div id="t_champ" style="font-size:1.5rem; text-transform:uppercase;">---</div>
-             </div>
-          </div>
-      </div>
-      
-      <div id="tourneyHostControls" style="display:none; text-align:center;">
-         <p style="margin-bottom:10px;">Gdy uzbiera się 4 graczy:</p>
-         <button class="btn btn-primary" id="btnStartTourney" disabled onclick="tournamentStartGame('wszystko')">ROZPOCZNIJ TURNIEJ</button>
-      </div>
-      
-      <p id="tourneyStatusMsg" style="margin-top:20px; color:var(--accent-orange);"></p>
-      
-      <button class="btn btn-outline" style="margin-top:30px" onclick="tournamentLeave()">↩ OPUŚĆ</button>
-    </section>
+    <!-- ── Usunięto starą Drabinkę Turniejową (Korzystamy teraz z widoków Multiplayer) ── -->
 
     <!-- ── Środek: Dodaj Pytanie ── -->
-    <section class="center-content game-setup" id="submitQuestionView" style="display:none; width:100%; max-width:600px;">
-      <h2 class="view-title" style="color:var(--accent-blue); text-shadow: 2px 2px 0 var(--border);">📝 DODAJ PYTANIE</h2>
+    <section class="center-content game-setup" id="submitQuestionView" style="display:none; width:100%; max-width:600px; margin: 0 auto;">
+      <h2 class="view-title" style="color:var(--accent-blue); text-shadow: 2px 2px 0 var(--border); text-align: center;">📝 DODAJ PYTANIE</h2>
       
-      <div style="width:100%; display:flex; flex-direction:column; gap:15px; text-align:left;">
+      <div style="width:100%; display:flex; flex-direction:column; gap:15px; text-align:center;">
           <input type="text" id="sq_question" placeholder="Zadaj tutaj pytanie..." class="pixel-input" />
           
           <select id="sq_category" class="pixel-input" style="cursor:pointer; color:var(--text-dim);" onchange="this.style.color='#fff'">
@@ -253,9 +253,13 @@
 
     <!-- ── Środek: Widok Gry ── -->
     <section class="center-content game-view" id="gameView" style="display:none;">
+      <div id="activeModeBadge" class="active-mode-badge" style="pointer-events: none;">TRYB: KLASYCZNY</div>
       <div class="game-header">
-        <div class="game-stats" id="gameStatsContainer">
-          WYNIK: <span id="gameScore" class="gold-text">0</span> | BŁĘDY: <span id="gameMistakes" class="red-text">0/2</span>
+        <div class="game-header-top">
+            <div class="game-stats" id="gameStatsContainer">
+              WYNIK: <span id="gameScore" class="gold-text">0</span> | BŁĘDY: <span id="gameMistakes" class="red-text">0/2</span> | PYTANIE: <span id="gameQuestionNum" class="gold-text">1/20</span>
+            </div>
+            <button class="btn btn-outline btn-exit" onclick="window.leaveGameEarly()" title="Wyjdź z gry">🚪 OPUŚĆ</button>
         </div>
         <div class="game-timer">
           <div class="timer-bar" id="timerBar"></div>
@@ -286,23 +290,31 @@
       <h2 class="view-title red-text">KONIEC GRY</h2>
       <div class="final-stats">
         <p>TWÓJ WYNIK: <span id="finalScore" class="gold-text">0</span></p>
+        <p>POPRAWNE: <span id="finalCorrect" class="green-text">0/20</span></p>
         <p>DOBRA PASSA: <span id="finalStreak">0</span></p>
       </div>
       <p id="gameOverMsg" class="game-over-msg">Niezła próba!</p>
       <div id="mpScoreboard" style="display:none; margin-top:20px; background:rgba(0,0,0,0.5); padding:15px; border:1px solid #444; width:100%; max-width:400px; margin-left:auto; margin-right:auto;"></div>
       <div class="menu-buttons" style="margin-top: 30px; flex-direction:row; justify-content:center;">
-        <button class="btn btn-outline" style="border-color:var(--accent-blue); color:var(--accent-blue);" onclick="shareScore()">🔗 UDOSTĘPNIJ WYNIK</button>
+        <button class="btn btn-outline" style="border-color:#00ff41; color:#00ff41; font-weight:bold;" onclick="openShareModal('gameOverView')">🔗 UDOSTĘPNIJ WYNIK</button>
         <button class="btn btn-primary" onclick="showMenu()">ZAKOŃCZ</button>
       </div>
     </section>
 
     <!-- ── Prawa: Ranking ── -->
     <aside class="sidebar sidebar--right" id="sidebarRight">
-      <div class="sidebar-header">
-        <span class="icon">🏆</span>
-        <h3>Top Gracze — Suma Pkt</h3>
+      <div class="sidebar-header" style="flex-direction:column; align-items:stretch; gap:10px; border-bottom:none; padding-bottom:5px;">
+        <div style="display:flex; justify-content:center; align-items:center; gap:10px;">
+          <span class="icon">🏆</span>
+          <h3>Top Gracze</h3>
+        </div>
+        <div style="display:flex; gap:5px;">
+          <button class="btn btn-outline" id="tabRankAll" style="flex:1; padding:5px 2px; font-size:0.75rem;" onclick="loadRanking('all')">OGÓLNY</button>
+          <button class="btn btn-outline" id="tabRankMonth" style="flex:1; padding:5px 2px; font-size:0.75rem;" onclick="loadRanking('monthly')">MIESIĄC</button>
+          <button class="btn btn-outline" id="tabRankWeek" style="flex:1; padding:5px 2px; font-size:0.75rem;" onclick="loadRanking('weekly')">TYDZIEŃ</button>
+        </div>
       </div>
-      <div class="sidebar-content" id="rankingList">
+      <div class="sidebar-content" id="rankingList" style="border-top:1px solid #444;">
         <div class="sidebar-loading">Ładowanie rankingu...</div>
       </div>
     </aside>
@@ -311,23 +323,48 @@
     <section class="center-content game-setup" id="infoView" style="display:none;">
       <h2 class="view-title" style="color:var(--accent-blue);">ℹ️ INFORMACJE</h2>
       <div class="pixel-input" style="text-align:left; background: rgba(0,0,0,0.6); margin-top: 20px; line-height: 1.6; border: 2px solid #555;">
-        <h3 class="gold-text">O GRZE RAPQUIZ</h3>
-        <p style="margin-top:10px; color:var(--text-dim);">
-          Rap Quiz to drugi mój projekt po Retro Rap Battle w którym chciałbym skonfrontować na przeciwko siebie słuchaczy jak i raperów i ludzi z branży.<br>
-          Tym razem chodzi o wiedzę a propos Polskiego rapu. Jest kilka trybów jak Turniej dla 4 osób czy gra we 2. Można również sprawdzić swoją wiedze grając samemu.<br><br>
-          Niektóre pytania mogą zawierać treść/fragmenty z serii książek Jacka Balińskiego "To nie jest Hip-Hop. Rozmowy".<br>
-          Zachęcam do przeczytania książek jak i obserwowania autora na Instagramie - <a href="https://www.instagram.com/jacek_balinski/" target="_blank" style="color:var(--accent-yellow); text-decoration:underline;"><strong>@jacek_balinski</strong></a>.
-        </p>
-        <p style="margin-top:15px; color:var(--text-main);">
-          OBSERWUJ AUTORA PO WIĘCEJ INFORMACJI: <a href="https://www.instagram.com/adammanski/" target="_blank" style="color:var(--accent-yellow); text-decoration:underline;"><strong>@adammanski</strong></a>
+        <h3 class="gold-text">O PROJEKCIE</h3>
+        <p style="margin-top:10px; color:var(--text-dim); font-size:0.95rem;">
+          <strong>RAPQUIZ</strong> to interaktywna podróż przez dekady polskiego hip-hopu. Od blokowisk lat 90. po nowoczesne trapowe brzmienia. Projekt powstał z pasji do kultury, by łączyć słuchaczy w rywalizacji o miano największego znawcy gatunku.<br><br>
+          Wiele pytań inspirowanych jest serią książek <span style="color:var(--accent-yellow);">"To nie jest Hip-Hop. Rozmowy"</span> Jacka Balińskiego. Zachęcamy do śledzenia autora: <a href="https://www.instagram.com/jacek_balinski/" target="_blank" style="color:var(--accent-yellow); text-decoration:underline;">@jacek_balinski</a>.
         </p>
         
-        <h3 class="gold-text" style="margin-top:25px;">ZASADY I TRYBY</h3>
-        <ul style="margin-top:10px; padding-left: 20px; color:var(--text-dim);">
-           <li><strong>KLASYCZNA GRA:</strong> Standardowa rozgrywka na 20 pytań, dopóki nie popełnisz 2 błędów.</li>
-           <li><strong>NIESKOŃCZONA GRA:</strong> Pula pytań nie ma końca – grasz, aż wyczerpiesz kategorię lub popełnisz błąd.</li>
-           <li><strong>MULTIPLAYER / TURNIEJ:</strong> Kodowane Pokoje, gdzie zmierzysz się 1v1 lub w drabince e-sportowej dla 4 osób. Kto szybciej odpowie, ten dostaje więcej punktów (od +1 do +4)!</li>
-        </ul>
+        <h3 class="gold-text" style="margin-top:30px; margin-bottom:15px; text-align:center;">TRYBY ROZGRYWKI</h3>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+           <div style="background:rgba(255,255,255,0.05); padding:15px; border:1px solid #444; border-radius:4px; border-left: 4px solid var(--accent-yellow);">
+              <h4 style="color:var(--accent-yellow); margin-bottom:5px;">💿 KLASYK</h4>
+              <p style="font-size:0.85rem; color:var(--text-dim);">20 pytań z epoki. Masz 1 szansę na błąd — drugi kończy grę.</p>
+           </div>
+           <div style="background:rgba(255,255,255,0.05); padding:15px; border:1px solid #444; border-radius:4px; border-left: 4px solid var(--accent-orange);">
+              <h4 style="color:var(--accent-orange); margin-bottom:5px;">♾️ NIESKOŃCZONOŚĆ</h4>
+              <p style="font-size:0.85rem; color:var(--text-dim);">Grasz do pierwszego błędu! Sprawdź jak daleko zajdziesz.</p>
+           </div>
+           <div style="background:rgba(255,255,255,0.05); padding:15px; border:1px solid #444; border-radius:4px; border-left: 4px solid var(--accent-blue);">
+              <h4 style="color:var(--accent-blue); margin-bottom:5px;">🔴 MULTIPLAYER</h4>
+              <p style="font-size:0.85rem; color:var(--text-dim);">Pokoje do 10 osób. Liczy się wiedza i refleks (Time Bonus).</p>
+           </div>
+           <div style="background:rgba(255,255,255,0.05); padding:15px; border:1px solid #444; border-radius:4px; border-left: 4px solid var(--accent-gold);">
+              <h4 style="color:var(--accent-gold); margin-bottom:5px;">🏆 TURNIEJ</h4>
+              <p style="font-size:0.85rem; color:var(--text-dim);">Igrzyska dla 20 graczy. Każdy błąd eliminuje Cię z walki!</p>
+           </div>
+        </div>
+
+        <div style="margin-top:30px; padding:20px; background:rgba(0,0,0,0.4); border:1px solid #333; border-radius:8px;">
+           <h3 class="gold-text" style="margin-bottom:15px; border-bottom:1px solid #444; padding-bottom:10px;">🛡️ ZASADY FAIR-PLAY</h3>
+           <ul style="color:var(--text-dim); font-size:0.9rem; padding-left:20px; line-height:1.7;">
+              <li>Używaj kół ratunkowych z głową – masz tylko jeden zestaw na grę klasyczną!</li>
+              <li>W trybie Multiplayer liczą się ułamki sekund – reflex to podstawa.</li>
+              <li>Nie używaj wspomagaczy – prawdziwy fan rapu zna odpowiedzi w głowie.</li>
+              <li>Szanuj przeciwników w lobby – gramy dla frajdy i czystej zajawki!</li>
+           </ul>
+        </div>
+
+        <h3 class="gold-text" style="margin-top:30px;">WSPÓŁPRACA</h3>
+        <p style="margin-top:10px; color:var(--text-dim); font-size:0.95rem;">
+          Chcesz zaprezentować swój kanał, projekt lub markę uderzając bezpośrednio do fanów polskiego rapu? <br>
+          Zapraszam do kontaktu przez Instagram: <a href="https://www.instagram.com/adammanski/" target="_blank" style="color:var(--accent-yellow); text-decoration:underline;"><strong>@adammanski</strong></a>
+        </p>
       </div>
       <div style="display:flex; justify-content:center; gap: 15px; margin-top: 30px; width: 100%;">
           <button class="btn btn-outline" style="flex:1; max-width:200px;" onclick="showMenu()">↩ Wyluzuj, wracam</button>
@@ -364,44 +401,114 @@
       <button class="modal-close" onclick="document.getElementById('profileModal').style.display='none'">✖</button>
       <h2 class="modal-title">TWÓJ PROFIL</h2>
       
-      <div style="display:flex; justify-content:space-between; margin-bottom: 20px;">
+      <div style="display:flex; justify-content:space-between; margin-bottom: 20px; font-size:0.9rem;">
          <div style="text-align:left;">
             <p>NICK: <strong id="profNick" class="gold-text">---</strong></p>
             <p>ROZEGRANE GRY: <strong id="profGames">0</strong></p>
+            <p>WYGRANE (MP): <strong id="profMpWins">0</strong></p>
+            <p>WYGRANE TURNIEJE: <strong id="profTourneyWins">0</strong></p>
          </div>
          <div style="text-align:right;">
             <p>NAJLEPSZY WYNIK: <strong id="profHighscore" class="gold-text">0</strong></p>
-            <p style="margin-top:6px;">SUMA PKT: <strong id="profTotalScore" class="gold-text">0</strong></p>
+            <p>SUMA PKT: <strong id="profTotalScore" class="gold-text">0</strong></p>
+            <p>DOBRE ODP: <strong id="profCorrect">0</strong></p>
+            <p>BŁĘDNE ODP: <strong id="profWrong">0</strong></p>
          </div>
       </div>
       
       <h3 style="border-bottom: 1px solid #444; padding-bottom:5px; margin-bottom:15px; text-align:left;">WIRTUALNE ODZNAKI</h3>
-      <div id="badgesContainer" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap:15px; text-align:center;">
-         <div class="badge-item" id="badge_rookie" style="opacity:0.3; filter:grayscale(1);">
-            <div style="font-size:2rem;">🎙️</div><div style="font-size:0.8rem;">MC ROOKIE</div>
-         </div>
-         <div class="badge-item" id="badge_zlotaera" style="opacity:0.3; filter:grayscale(1);">
-            <div style="font-size:2rem;">🏆</div><div style="font-size:0.8rem;">ZŁOTA ERA</div>
-         </div>
-         <div class="badge-item" id="badge_diamond" style="opacity:0.3; filter:grayscale(1);">
-            <div style="font-size:2rem;">💎</div><div style="font-size:0.8rem;">DIAMOND DISC</div>
-         </div>
-         <div class="badge-item" id="badge_milczacy" style="opacity:0.3; filter:grayscale(1);">
-            <div style="font-size:2rem;">🤫</div><div style="font-size:0.8rem;">MILCZĄCY ŚWIADEK</div>
-         </div>
-         <div class="badge-item" id="badge_freestyle" style="opacity:0.3; filter:grayscale(1);">
-            <div style="font-size:2rem;">⚡</div><div style="font-size:0.8rem;">FREESTYLE KING</div>
-         </div>
+      <div id="badgesContainer" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap:10px; text-align:center;">
+         <!-- Klasyczne -->
+         <div class="badge-item" id="badge_rookie" title="MC ROOKIE: Rozegraj co najmniej 10 gier." style="opacity:0.3; filter:grayscale(1);"><div style="font-size:1.8rem;">🎙️</div><div style="font-size:0.72rem;">MC ROOKIE</div></div>
+         <div class="badge-item" id="badge_zlotaera" title="ZŁOTA ERA: Bezbłędnie ukończ kategorię 1990-2010." style="opacity:0.3; filter:grayscale(1);"><div style="font-size:1.8rem;">🏆</div><div style="font-size:0.72rem;">ZŁOTA ERA</div></div>
+         <div class="badge-item" id="badge_diamond" title="DIAMOND DISC: Zdobądź 1000+ pkt w jednej grze." style="opacity:0.3; filter:grayscale(1);"><div style="font-size:1.8rem;">💎</div><div style="font-size:0.72rem;">DIAMOND DISC</div></div>
+         <div class="badge-item" id="badge_milczacy" title="MILCZĄCY ŚWIADEK: Ukończ grę bez kół ratunkowych." style="opacity:0.3; filter:grayscale(1);"><div style="font-size:1.8rem;">🤫</div><div style="font-size:0.72rem;">MILCZĄCY ŚWIADEK</div></div>
+         <div class="badge-item" id="badge_freestyle" title="FREESTYLE KING: Zdobądź streak 10 szybkich odpowiedzi (poniżej 5s)." style="opacity:0.3; filter:grayscale(1);"><div style="font-size:1.8rem;">⚡</div><div style="font-size:0.72rem;">FREESTYLE KING</div></div>
+         <!-- Umiejętności -->
+         <div class="badge-item" id="badge_snajper" title="SNAJPER: Ukończ tryb Klasyczny bez żadnego błędu." style="opacity:0.3; filter:grayscale(1);"><div style="font-size:1.8rem;">🎯</div><div style="font-size:0.72rem;">SNAJPER</div></div>
+         <div class="badge-item" id="badge_goracaplyta" title="GORĄCA PŁYTA: Zdobądź 5 poprawnych odpowiedzi z rzędu." style="opacity:0.3; filter:grayscale(1);"><div style="font-size:1.8rem;">🔥</div><div style="font-size:0.72rem;">GORĄCA PŁYTA</div></div>
+         <div class="badge-item" id="badge_turbo" title="TURBO: Odpowiedz na 5 pytań z rzędu w mniej niż 3 sekundy." style="opacity:0.3; filter:grayscale(1);"><div style="font-size:1.8rem;">🚀</div><div style="font-size:0.72rem;">TURBO</div></div>
+         <div class="badge-item" id="badge_uliczny" title="ULICZNY FILOZOF: Zdobądź streak 10 i odblokuj bonus +150 pkt." style="opacity:0.3; filter:grayscale(1);"><div style="font-size:1.8rem;">🎱</div><div style="font-size:0.72rem;">ULICZNY FILOZOF</div></div>
+         <!-- Tryby gry -->
+         <div class="badge-item" id="badge_maraton" title="MARATON: Odpowiedz poprawnie na 15+ pytań w trybie Nieskończonym." style="opacity:0.3; filter:grayscale(1);"><div style="font-size:1.8rem;">💪</div><div style="font-size:0.72rem;">MARATON</div></div>
+         <div class="badge-item" id="badge_dailygrind" title="DAILY GRIND: Zagraj w Codzienne Wyzwanie 3 dni z rzędu." style="opacity:0.3; filter:grayscale(1);"><div style="font-size:1.8rem;">📅</div><div style="font-size:0.72rem;">DAILY GRIND</div></div>
+         <div class="badge-item" id="badge_koneser" title="KONESER: Zagraj we wszystkich 3 epokach muzycznych." style="opacity:0.3; filter:grayscale(1);"><div style="font-size:1.8rem;">🍷</div><div style="font-size:0.72rem;">KONESER</div></div>
+         <div class="badge-item" id="badge_ratownik" title="RATOWNIK: Użyj wszystkich 4 kół ratunkowych w jednej grze." style="opacity:0.3; filter:grayscale(1);"><div style="font-size:1.8rem;">🛟</div><div style="font-size:0.72rem;">RATOWNIK</div></div>
+         <!-- Multiplayer -->
+         <div class="badge-item" id="badge_showman" title="SHOW MAN: Zagraj swój pierwszy mecz Multiplayer." style="opacity:0.3; filter:grayscale(1);"><div style="font-size:1.8rem;">👑</div><div style="font-size:0.72rem;">SHOW MAN</div></div>
+         <div class="badge-item" id="badge_bossulicy" title="BOSS ULICY: Wygraj 5 meczów Multiplayer." style="opacity:0.3; filter:grayscale(1);"><div style="font-size:1.8rem;">🎤</div><div style="font-size:0.72rem;">BOSS ULICY</div></div>
+         <div class="badge-item" id="badge_klan" title="KLAN: Wygraj 10 meczów Multiplayer." style="opacity:0.3; filter:grayscale(1);"><div style="font-size:1.8rem;">🤝</div><div style="font-size:0.72rem;">KLAN</div></div>
+         <!-- Postęp -->
+         <div class="badge-item" id="badge_profesor" title="PROFESOR RAPU: Rozegraj łącznie 50 gier." style="opacity:0.3; filter:grayscale(1);"><div style="font-size:1.8rem;">🎓</div><div style="font-size:0.72rem;">PROFESOR RAPU</div></div>
+         <div class="badge-item" id="badge_karciana" title="KARCIANA LEGENDA: Zdobądź łącznie 5000+ punktów w historii." style="opacity:0.3; filter:grayscale(1);"><div style="font-size:1.8rem;">💳</div><div style="font-size:0.72rem;">KARCIANA LEGENDA</div></div>
+         <div class="badge-item" id="badge_nocnazmiana" title="NOCNA ZMIANA: Zagraj pomiędzy 23:00 a 5:00 rano." style="opacity:0.3; filter:grayscale(1);"><div style="font-size:1.8rem;">🌙</div><div style="font-size:0.72rem;">NOCNA ZMIANA</div></div>
+         <div class="badge-item" id="badge_legenda" title="LEGENDA: Zdobądź co najmniej 10 innych odznak." style="opacity:0.3; filter:grayscale(1);"><div style="font-size:1.8rem;">🌟</div><div style="font-size:0.72rem;">LEGENDA</div></div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px; margin-top:20px;">
+          <button class="btn btn-outline" style="border-color:#00ff41; color:#00ff41; font-weight:bold;" onclick="openShareModal('profileModal')">🔗 UDOSTĘPNIJ MÓJ PROFIL</button>
+          <button class="btn btn-outline" style="border-color:var(--accent-red); color:var(--accent-red);" onclick="logout()">WYLOGUJ SIĘ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ MODAL KOŁA RATUNKOWEGO ═══════════════════ -->
+  <div id="lifelineModal" class="modal-overlay" style="display: none; z-index:9999;">
+    <div class="modal-content auth-modal" style="max-width:400px; border-color:var(--accent-blue);">
+      <button class="modal-close" onclick="document.getElementById('lifelineModal').style.display='none'">✖</button>
+      <h2 id="lifelineTitle" class="modal-title" style="color:var(--accent-blue);">KOŁO RATUNKOWE</h2>
+      <div id="lifelineText" style="text-align:left; color:var(--text-main); margin:15px 0; font-size:1.1rem; line-height:1.5; white-space:pre-wrap;"></div>
+      <button class="btn btn-outline" style="width:100%; border-color:var(--accent-blue); color:var(--accent-blue);" onclick="document.getElementById('lifelineModal').style.display='none'; if(typeof window.pauseGameTimer === 'function') window.pauseGameTimer(false);">ROZUMIEM</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ MODAL POLITYKI PRYWATNOŚCI ═══════════════════ -->
+  <div id="privacyModal" class="modal-overlay" style="display: none; z-index:9999; backdrop-filter: blur(5px);">
+    <div class="modal-content auth-modal" style="max-width:500px; border-color:var(--accent-gold);">
+      <h2 class="modal-title" style="color:var(--accent-gold); font-size:1.8rem;">POLITYKA PRYWATNOŚCI</h2>
+      <div style="text-align:left; color:var(--text-dim); margin:15px 0; font-size:0.9rem; line-height:1.5; max-height:40vh; overflow-y:auto; padding-right:10px;">
+        Witaj na pokładzie <strong>RAPQUIZ</strong>! Twoja prywatność jest dla nas równie ważna, co szacunek do klasycznych bitów.<br><br>
+        <span style="color:var(--text-main);">• Brak danych wrażliwych:</span> Nikogo nie pytamy o prawdziwe imię czy adres e-mail. Rejestracja wymaga jedynie nicku i hasła.<br>
+        <span style="color:var(--text-main);">• Szyfrowanie Ciemną Materią:</span> Twoje hasło i ewentualne przypomnienie do resetu są przed zapisem mocno szyfrowane w nieodwracalny skrót na backendzie. Nikt nie pozna Twojego hasła.<br>
+        <span style="color:var(--text-main);">• Lokalne Magazynowanie (Storage):</span> Gra używa minimalnej puli danych zapisanych poprzez pamięć lokalną w Twojej przeglądarce (np. aby zachować Cię pomyślnie zalogowanym oraz zapisać stan "widzianych" reklam). Nie używamy żadnych brudnych ciasteczek third-party o charakterze szpiegowskim.<br>
+        <span style="color:var(--text-main);">• Rozgrywka Fair Play (MP):</span> W przypadku meczy sieciowych zapisywane są tylko nick, aktualny wynik podczas rund oraz wygrana/przegrana w celu tworzenia publicznego Rankingu Top.<br><br>
+        Klikając akceptację, wyrażasz na te czasy jednorazową zgodę i możesz pędzić do rywalizacji. Pozdro!
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="acceptPrivacy()">ZROZUMIAŁEM I AKCEPTUJĘ</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ MODAL UDOSTĘPNIANIA (SHARE) ═══════════════════ -->
+  <div id="shareModal" class="modal-overlay" style="display: none; z-index:9999;">
+    <div class="modal-content auth-modal" style="max-width:450px; border-color:var(--accent-blue);">
+      <button class="modal-close" onclick="document.getElementById('shareModal').style.display='none'">✖</button>
+      <h2 class="modal-title" style="color:var(--accent-blue);">UDOSTĘPNIJ WYNIK</h2>
+      
+      <div style="display:flex; flex-direction:column; gap:10px; margin:20px 0;">
+        <button class="btn btn-outline" style="border-color:#00ff41; color:#00ff41; font-weight:bold;" onclick="generateScreenshotAndShare()">📸 ZRÓB ZRZUT EKRANU I POBIERZ</button>
+        <button class="btn btn-outline" style="background:#1877F2; color:#fff;" onclick="quickShare('facebook')">💻 WSTAW NA FACEBOKA</button>
+        <button class="btn btn-outline" style="background:#00B2FF; color:#fff;" onclick="quickShare('messenger')">💬 WYŚLIJ MESSAGE</button>
+        <button class="btn btn-outline" style="background:#25D366; color:#000;" onclick="quickShare('whatsapp')">📞 WYŚLIJ WHATSAPP</button>
+        <button class="btn btn-outline" style="background:#000; color:#fff;" onclick="quickShare('x')">𝕏 ZATWEETUJ</button>
+      </div>
+      
+      <p style="font-size:0.8rem; color:var(--text-dim);">Aby przelać wynik na TikTok/Instagram post – najpierw zrób zrzut z poziomu strony, a potem roześlij wygenerowane zdjęcie!</p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ MODAL POWIADOMIEŃ / DIALOG (Zastępuje Alert) ═══════════════════ -->
+  <div id="customDialogModal" class="modal-overlay" style="display: none; z-index:10000; backdrop-filter: blur(5px);">
+    <div class="modal-content auth-modal" style="max-width:400px; border-color:var(--accent-red);">
+      <h2 id="customDialogTitle" class="modal-title" style="color:var(--accent-red);">UWAGA</h2>
+      <div id="customDialogText" style="text-align:center; color:var(--text-main); margin:20px 0; font-size:1.1rem; line-height:1.5;"></div>
+      <div style="display:flex; gap:10px; justify-content:center;">
+        <button id="customDialogBtnYes" class="btn btn-outline" style="border-color:var(--accent-red); color:var(--accent-red); flex:1;">TAK</button>
+        <button id="customDialogBtnNo" class="btn btn-secondary" style="flex:1;">NIE</button>
       </div>
     </div>
   </div>
 
   <!-- ═══════════════════ FOOTER ═══════════════════ -->
-  <footer style="cursor: pointer" onclick="checkAuthAndOpen()">
-    <div class="footer-status">
-      <div class="status-dot"></div>
-      <span id="playerStatus">OFFLINE - KLIKNIJ ABY ZALOGOWAĆ</span>
-    </div>
+  <footer>
     <span>RAPQUIZ © 2026</span>
     <span id="footerTime"></span>
   </footer>
@@ -409,7 +516,9 @@
 </div><!-- /#app -->
 
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="js/data/questions.js"></script>
+<script src="js/data/daily_events.js"></script>
 <script src="js/menu.js"></script>
 <script src="js/game.js"></script>
 <script src="js/multiplayer.js"></script>

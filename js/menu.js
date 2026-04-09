@@ -47,19 +47,31 @@ const MOCK_RANKING = [
   { nick: 'QuizBoy',  score: 610, lifelines: '🔲' },
 ];
 
-async function renderRanking() {
+async function loadRanking(type = 'all') {
+  document.getElementById('tabRankAll').style.background = type === 'all' ? 'rgba(255,255,255,0.1)' : 'transparent';
+  document.getElementById('tabRankMonth').style.background = type === 'monthly' ? 'rgba(255,255,255,0.1)' : 'transparent';
+  document.getElementById('tabRankWeek').style.background = type === 'weekly' ? 'rgba(255,255,255,0.1)' : 'transparent';
+
   const container = document.getElementById('rankingList');
+  container.innerHTML = '<div class="sidebar-loading">Ładowanie rankingu...</div>';
   const posClasses = ['gold', 'silver', 'bronze'];
   
   try {
-     const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:4000' : '';
-     const res = await fetch(`${API_URL}/api/ranking`);
+     const isLocalFile = window.location.protocol === 'file:';
+     const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:4000' : '';
+     const query = type === 'all' ? '' : `?type=${type}`;
+     
+     if (isLocalFile) {
+         return drawRankingHTML(MOCK_RANKING, container, posClasses);
+     }
+
+     const res = await fetch(`${API_URL}/api/ranking${query}`);
      if (!res.ok) throw new Error('API Ranking Error');
      const json = await res.json();
      if (json.success && json.data && json.data.length > 0) {
         drawRankingHTML(json.data, container, posClasses);
      } else {
-        throw new Error('Ranking pęsty z API');
+        container.innerHTML = '<div class="sidebar-loading" style="color:var(--text-dim);">Brak wyników w tym okresie.</div>';
      }
   } catch(err) {
      console.warn('Backend rankingu niedostępny, używam MOCK:', err);
@@ -92,27 +104,25 @@ function drawRankingHTML(dataList, container, posClasses) {
 // ── (ZMODYFIKOWANO: Usunięto sekcję premier) ──
 
 // ── Button actions (stubbed — widoczna pełna logika Auth) ───
-function startGame() {
+function startGame(endless) {
   const token = localStorage.getItem('rapquiz_token');
   if (!token) {
-    openAuthModal();
+    if(window.openAuthModal) window.openAuthModal();
     return;
   }
-  alert('🎮 Gra Solo — uruchamianie fazy!');
+  if (window.showView) {
+      window.isEndlessSelected = !!endless;
+      window.showView('setupView');
+  }
 }
 
 function createRoom() {
   const token = localStorage.getItem('rapquiz_token');
   if (!token) {
-    openAuthModal();
+    if(window.openAuthModal) window.openAuthModal();
     return;
   }
-  if (typeof showView === 'function') {
-    showView('multiplayerHubView');
-  } else {
-    document.getElementById('menuView').style.display = 'none';
-    document.getElementById('multiplayerHubView').style.display = 'flex';
-  }
+  if(window.showView) window.showView('multiplayerHubView');
 }
 
 async function dailyChallenge() {
@@ -200,8 +210,8 @@ function shareGame() {
     navigator.share(shareData).catch(err => console.log('Błąd udostępniania:', err));
   } else {
     navigator.clipboard.writeText(window.location.href).then(() => {
-      alert('Chcesz udostępnić grę? Skopiowano link do strony: ' + window.location.href);
-    }).catch(err => alert('Twój link to: ' + window.location.href));
+      showCustomAlert('Skopiowano link do strony: ' + window.location.href);
+    }).catch(err => showCustomAlert('Twój link to: ' + window.location.href));
   }
 }
 
@@ -217,7 +227,7 @@ function shareScore() {
     navigator.share(shareData).catch(err => console.log('Błąd udostępniania:', err));
   } else {
     navigator.clipboard.writeText(`${shareData.text} Spróbuj tutaj: ${shareData.url}`).then(() => {
-      alert('Twój wynik i link do gry skopiowano do schowka! Możesz teraz wkleić go znajomym.');
+      showCustomAlert('Twój wynik i link do gry skopiowano do schowka! Możesz teraz wkleić go znajomym.');
     });
   }
 }
@@ -297,6 +307,7 @@ function openAuthModal() {
 function closeAuthModal() {
   document.getElementById('authModal').style.display = 'none';
   document.getElementById('authError').textContent = '';
+  if (typeof window.pauseGameTimer === 'function') window.pauseGameTimer(false);
 }
 
 function switchAuthTab(mode) {
@@ -397,13 +408,26 @@ async function openProfileModal() {
    const user = JSON.parse(userStr);
    document.getElementById('profNick').textContent = user.username;
    
-   const stats = JSON.parse(localStorage.getItem('rapquiz_stats') || '{"gamesPlayed":0, "highScore":0, "totalScore":0, "badges":[]}');
+   const stats = JSON.parse(localStorage.getItem('rapquiz_stats') || '{"gamesPlayed":0, "highScore":0, "totalScore":0, "badges":[], "correctAnswers":0, "wrongAnswers":0, "tourneyWins":0, "mpWins":0}');
    document.getElementById('profGames').textContent = stats.gamesPlayed || 0;
    document.getElementById('profHighscore').textContent = stats.highScore || 0;
+   
    const tEl = document.getElementById('profTotalScore');
    if (tEl) tEl.textContent = stats.totalScore || 0;
    
-   const badgeKeys = ['rookie', 'zlotaera', 'diamond', 'milczacy', 'freestyle'];
+   // Nowe statystyki
+   if(document.getElementById('profCorrect')) document.getElementById('profCorrect').textContent = stats.correctAnswers || 0;
+   if(document.getElementById('profWrong')) document.getElementById('profWrong').textContent = stats.wrongAnswers || 0;
+   if(document.getElementById('profMpWins')) document.getElementById('profMpWins').textContent = stats.mpWins || 0;
+   if(document.getElementById('profTourneyWins')) document.getElementById('profTourneyWins').textContent = stats.tourneyWins || 0;
+   
+   const badgeKeys = [
+       'rookie','zlotaera','diamond','milczacy','freestyle',
+       'snajper','goracaplyta','turbo','uliczny',
+       'maraton','dailygrind','koneser','ratownik',
+       'showman','bossulicy','klan',
+       'profesor','karciana','nocnazmiana','legenda'
+   ];
    badgeKeys.forEach(k => {
        const el = document.getElementById('badge_' + k);
        if(stats.badges && stats.badges.includes(k)) {
@@ -414,10 +438,157 @@ async function openProfileModal() {
    });
 }
 
+// Globalny handler dla kliknięć w tło modali (Click outside to close)
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal-overlay')) {
+        // Nie zamykamy modala prywatności ani dialogu potwierdzenia/alertu w ten sposób
+        if (e.target.id === 'privacyModal' || e.target.id === 'customDialogModal') return;
+        
+        e.target.style.display = 'none';
+        
+        // Wznów timer jeśli to był modal z grą
+        if (typeof window.pauseGameTimer === 'function') {
+            window.pauseGameTimer(false);
+        }
+    }
+});
+
 // ── Init ───────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+    if (!localStorage.getItem('rapquiz_privacy_accepted')) {
+        const modal = document.getElementById('privacyModal');
+        if(modal) modal.style.display = 'flex';
+    }
+    if (window.showView) window.showView('menuView');
     checkAuthStatus();
-    renderRanking();
+    loadRanking('all');
     // Sekcja premier usunięta z init
 });
 
+window.acceptPrivacy = function() {
+    localStorage.setItem('rapquiz_privacy_accepted', 'true');
+    const modal = document.getElementById('privacyModal');
+    if(modal) modal.style.display = 'none';
+};
+
+// ── CUSTOM DIALOG / ALERTS ──
+window.showCustomAlert = function(msg) {
+    document.getElementById('customDialogTitle').textContent = "INFORMACJA";
+    document.getElementById('customDialogTitle').style.color = "var(--text-main)";
+    document.getElementById('customDialogText').textContent = msg;
+    document.getElementById('customDialogBtnNo').style.display = 'none';
+    
+    const btnYes = document.getElementById('customDialogBtnYes');
+    btnYes.textContent = "OK";
+    btnYes.onclick = function() { 
+        document.getElementById('customDialogModal').style.display = 'none';
+    };
+    
+    document.getElementById('customDialogModal').style.display = 'flex';
+};
+
+window.showCustomConfirm = function(msg, onYes, onNo) {
+    document.getElementById('customDialogTitle').textContent = "POTWIERDZENIE";
+    document.getElementById('customDialogTitle').style.color = "var(--accent-red)";
+    document.getElementById('customDialogText').textContent = msg;
+    document.getElementById('customDialogBtnNo').style.display = 'inline-block';
+    
+    const btnYes = document.getElementById('customDialogBtnYes');
+    btnYes.textContent = "TAK";
+    btnYes.onclick = function() { 
+        document.getElementById('customDialogModal').style.display = 'none';
+        if(onYes) onYes();
+    };
+    
+    document.getElementById('customDialogBtnNo').onclick = function() {
+        document.getElementById('customDialogModal').style.display = 'none';
+        if(onNo) onNo();
+    };
+    
+    document.getElementById('customDialogModal').style.display = 'flex';
+};
+
+// ── Klasyczne Wylogowanie ──
+window.logout = function() {
+    localStorage.removeItem('rapquiz_token');
+    localStorage.removeItem('rapquiz_user');
+    document.getElementById('profileModal').style.display = 'none';
+    checkAuthStatus();
+    showCustomAlert('Wylogowano pomyślnie!');
+    showMenu();
+};
+
+// ── Udostępnianie: Narzędzia html2canvas / Share API ──
+let shareTargetElementId = 'gameView'; // co screenshotujemy domyślnie
+
+window.openShareModal = function(targetId) {
+    shareTargetElementId = targetId || 'gameView';
+    document.getElementById('shareModal').style.display = 'flex';
+};
+
+window.generateScreenshotAndShare = async function() {
+    const el = document.getElementById(shareTargetElementId);
+    if (!el) return;
+    
+    // Podmiana guzików na info o ładowaniu
+    const btn = document.querySelector('#shareModal .btn-outline[onclick="generateScreenshotAndShare()"]');
+    const oldText = btn.textContent;
+    btn.textContent = "⚙️ GENEROWANIE OBRAZU...";
+    btn.disabled = true;
+
+    try {
+        const canvas = await html2canvas(el, { backgroundColor: '#111', scale: 2 });
+        
+        canvas.toBlob(async (blob) => {
+            const file = new File([blob], 'rapquiz-wynik.png', { type: 'image/png' });
+            
+            // Jesli telefon i web share api wspiera pliki
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        title: 'Mój wynik w RAPQUIZ',
+                        text: 'Obczaj co udało mi się wykręcić! Spróbuj na: ' + window.location.href,
+                        files: [file]
+                    });
+                } catch(e) { console.log('Błąd natywnego share', e); }
+            } else {
+                // Jesli to PC lub stary sprzet, sprobuj wrzucic to w link z pobraniem obrazu!
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'rapquiz-wynik.png';
+                a.click();
+                URL.revokeObjectURL(url);
+                showCustomAlert("Plik 'rapquiz-wynik.png' został pobrany. Użyj go, by udostępnić post jako załącznik np. na Instagram!");
+            }
+        }, 'image/png');
+    } catch(e) {
+        showCustomAlert('Wystąpił błąd przy generowaniu obrazu.');
+    } finally {
+        btn.textContent = oldText;
+        btn.disabled = false;
+    }
+};
+
+window.quickShare = function(platform) {
+   let textStr = 'Właśnie kręcę kozackie wyniki w polskim hip-hopowym RAPQUIZ! Spróbuj swoich sił: ';
+   
+   const score = document.getElementById('finalScore')?.textContent;
+   const correct = document.getElementById('finalCorrect')?.textContent;
+   
+   if (score && score !== '0') {
+       textStr = `Mój wynik w RAPQUIZ to ${score} pkt (${correct} poprawnych)! Spróbuj pobić mój rekord: `;
+   }
+   
+   const text = encodeURIComponent(textStr);
+   const url = encodeURIComponent(window.location.href);
+   let finalUrl = '';
+   
+   switch(platform) {
+       case 'facebook': finalUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`; break;
+       case 'messenger': finalUrl = `fb-messenger://share/?link=${url}`; break;
+       case 'whatsapp': finalUrl = `https://api.whatsapp.com/send?text=${text}%20${url}`; break;
+       case 'x': finalUrl = `https://twitter.com/intent/tweet?text=${text}&url=${url}`; break;
+   }
+   if(finalUrl) window.open(finalUrl, '_blank', 'noopener,noreferrer');
+};

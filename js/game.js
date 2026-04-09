@@ -3,6 +3,7 @@
  * Zawiera logikę ładowania pytań, timery, walidację, punktację oraz koła ratunkowe.
  */
 
+(function() {
 let allQuestions = {};
 let currentPool = [];
 let currentQuestion = null;
@@ -14,6 +15,8 @@ let state = {
     streak: 0,
     startTime: 0,
     category: '',
+    correct_answers: 0,
+    wrong_answers: 0,
     lifelines: {
         '5050': true,
         'phone': true,
@@ -23,6 +26,7 @@ let state = {
 };
 
 let timerInterval = null;
+let isTimerPaused = false;
 const TIME_LIMIT = 20;
 let timeLeft = TIME_LIMIT;
 
@@ -47,14 +51,18 @@ function showView(viewId) {
     const dailySetup = document.getElementById('dailySetupView');
     if(dailySetup) dailySetup.style.display = 'none';
     
-    // Toggle sidebar
-    const sidebar = document.getElementById('sidebarRight');
+    // Toggle sidebars
+    const sRight = document.getElementById('sidebarRight');
+    const sLeft = document.getElementById('sidebarLeft');
     const mainWrap = document.querySelector('main');
+    
     if(viewId === 'menuView') {
-        if(sidebar) sidebar.style.display = 'flex';
+        if(sRight) sRight.style.display = 'flex';
+        if(sLeft) sLeft.style.display = 'flex';
         if(mainWrap) mainWrap.classList.add('with-sidebar');
     } else {
-        if(sidebar) sidebar.style.display = 'none';
+        if(sRight) sRight.style.display = 'none';
+        if(sLeft) sLeft.style.display = 'none';
         if(mainWrap) mainWrap.classList.remove('with-sidebar');
     }
 
@@ -94,7 +102,7 @@ loadQuestions();
 function initGame(category) {
     const statsContainer = document.getElementById('gameStatsContainer');
     if(statsContainer) {
-        statsContainer.innerHTML = `WYNIK: <span id="gameScore" class="gold-text">0</span> | BŁĘDY: <span id="gameMistakes" class="red-text">...</span>`;
+        statsContainer.innerHTML = `WYNIK: <span id="gameScore" class="gold-text">0</span> | BŁĘDY: <span id="gameMistakes" class="red-text">0/2</span> | PYTANIE: <span id="gameQuestionNum" class="gold-text">1/20</span>`;
     }
     window.isMultiplayer = false;
     document.querySelector('.lifelines-bar').style.display = 'flex';
@@ -104,7 +112,12 @@ function initGame(category) {
         mistakes: 0,
         streak: 0,
         category: category,
+        correct_answers: 0,
+        wrong_answers: 0,
         isEndless: window.isEndlessSelected,
+        currentQuestionNum: 0,
+        totalQuestions: 0,
+        isGameActive: true,
         lifelines: { '5050': true, 'phone': true, 'audience': true, 'skip': true }
     };
 
@@ -117,7 +130,7 @@ function initGame(category) {
     }
     
     if (currentPool.length === 0) {
-        alert('Kategoria jest pusta.');
+        if(window.showCustomAlert) window.showCustomAlert('Kategoria jest pusta.');
         return;
     }
 
@@ -130,6 +143,14 @@ function initGame(category) {
     if (!state.isEndless && currentPool.length > 20) {
         // Zostawiamy dokładnie 20 pytań dla trybu Klasycznego
         currentPool = currentPool.slice(0, 20);
+    }
+    state.totalQuestions = currentPool.length;
+
+    // Ustawienie nagłówka trybu
+    const modeBadge = document.getElementById('activeModeBadge');
+    if (modeBadge) {
+        if (state.isEndless) modeBadge.textContent = 'TRYB: NIESKOŃCZONY';
+        else modeBadge.textContent = 'TRYB: KLASYCZNY';
     }
 
     updateUIStats();
@@ -156,7 +177,7 @@ function initDailyGame() {
     
     const statsContainer = document.getElementById('gameStatsContainer');
     if(statsContainer) {
-        statsContainer.innerHTML = `WYNIK: <span id="gameScore" class="gold-text">0</span> | PYTANIE: <span id="gameMistakes" class="gold-text">1/10</span>`;
+        statsContainer.innerHTML = `WYNIK: <span id="gameScore" class="gold-text">0</span> | BŁĘDY: <span id="gameMistakes" class="red-text">0/10</span> | PYTANIE: <span id="gameQuestionNum" class="gold-text">1/10</span>`;
     }
     
     window.isMultiplayer = false;
@@ -167,35 +188,55 @@ function initDailyGame() {
         mistakes: 0,
         streak: 0,
         category: 'daily',
+        correct_answers: 0,
+        wrong_answers: 0,
         isDaily: true,
+        currentQuestionNum: 0,
+        totalQuestions: 10,
+        isGameActive: true,
         lifelines: { '5050': false, 'phone': false, 'audience': false, 'skip': false }
     };
 
-    currentPool = [];
-    Object.values(allQuestions).forEach(arr => currentPool = currentPool.concat(arr));
-    
-    for (let i = currentPool.length - 1; i > 0; i--) {
-        const j = Math.floor(prng() * (i + 1));
-        [currentPool[i], currentPool[j]] = [currentPool[j], currentPool[i]];
+    // Obsługa Special Events (Daily)
+    const today = new Date().toISOString().split('T')[0];
+    let customQuestionSet = null;
+    if (typeof DAILY_EVENTS !== 'undefined' && DAILY_EVENTS[today]) {
+        customQuestionSet = DAILY_EVENTS[today].questions;
+        document.getElementById('dailyDateLabel').innerHTML = today + `<br><span style="font-size:1rem;color:var(--text-main);">${DAILY_EVENTS[today].theme}</span>`;
     }
-    
-    currentPool = currentPool.slice(0, 10);
+
+    currentPool = [];
+    if (customQuestionSet) {
+        currentPool = [...customQuestionSet];
+    } else {
+        Object.values(allQuestions).forEach(arr => currentPool = currentPool.concat(arr));
+        for (let i = currentPool.length - 1; i > 0; i--) {
+            const j = Math.floor(prng() * (i + 1));
+            [currentPool[i], currentPool[j]] = [currentPool[j], currentPool[i]];
+        }
+        currentPool = currentPool.slice(0, 10);
+    }
     currentPool.reverse();
 
-    if(statsContainer) {
-       document.getElementById('gameScore').textContent = '0';
-       document.getElementById('gameMistakes').textContent = '1/10';
-    }
+    // Ustawienie nagłówka trybu
+    const modeBadge = document.getElementById('activeModeBadge');
+    if (modeBadge) modeBadge.textContent = 'TRYB: CODZIENNE WYZWANIE';
+
+    updateUIStats();
     showView('gameView');
     setTimeout(nextQuestion, 500);
 }
 
 // ── Render Tury ───────────────────────────────────────────────────
 function nextQuestion() {
+    if (!state.isGameActive) return;
+
     if (state.isDaily) {
         if (state.mistakes >= 10) return endGame();
     } else if (state.isEndless) {
-        if (state.mistakes >= 2) return endGame();
+        if (state.mistakes >= 1) return endGame(); // Endless: koniec po PIERWSZYM błędzie
+    } else {
+        if (state.mistakes >= 2) return endGame(); // Klasyk: koniec po DRUGIM błędzie
     }
     // W trybie "Klasycznym" (20 pytań) grzejemy do końca puli bez limitu wyrzucenia za błędy
     
@@ -209,7 +250,9 @@ function nextQuestion() {
         return;
     }
 
+    state.currentQuestionNum = (state.currentQuestionNum || 0) + 1;
     currentQuestion = currentPool.pop();
+    updateUIStats();
     
     document.getElementById('questionText').textContent = currentQuestion.question;
     renderAnswers(currentQuestion.answers);
@@ -237,10 +280,13 @@ function renderAnswers(answers) {
 function startTimer() {
     clearInterval(timerInterval);
     timeLeft = TIME_LIMIT;
+    isTimerPaused = false;
     state.startTime = Date.now();
     updateTimerUI();
 
     timerInterval = setInterval(() => {
+        if (isTimerPaused) return; // Pauza
+        
         timeLeft -= 0.1;
         updateTimerUI();
         if (timeLeft <= 0) {
@@ -248,6 +294,10 @@ function startTimer() {
             timeIsUp();
         }
     }, 100);
+}
+
+window.pauseGameTimer = function(paused) {
+    isTimerPaused = !!paused;
 }
 
 function updateTimerUI() {
@@ -287,38 +337,65 @@ function handleAnswer(selectedIndex, btnElement) {
         if (resolveTime <= 5) {
             pts = 100;
             state.fastStreak = (state.fastStreak || 0) + 1;
+            // TURBO: streak odpowiedzi poniżej 3 sekund
+            if (resolveTime <= 3) {
+                state.ultraFastStreak = (state.ultraFastStreak || 0) + 1;
+                if (state.ultraFastStreak >= 5 && !state.isDaily && !window.isMultiplayer) {
+                    let st = JSON.parse(localStorage.getItem('rapquiz_stats') || '{"badges":[]}');
+                    if (!st.badges.includes('turbo')) {
+                        st.badges.push('turbo');
+                        localStorage.setItem('rapquiz_stats', JSON.stringify(st));
+                        showNotification('ODZNAKA: TURBO! 🚀', 'var(--accent-blue)');
+                    }
+                }
+            } else {
+                state.ultraFastStreak = 0;
+            }
             if(state.fastStreak >= 10 && !state.isDaily && !window.isMultiplayer) {
-               let st = JSON.parse(localStorage.getItem('rapquiz_stats') || '{"gamesPlayed":0, "highScore":0, "badges":[]}');
+               let st = JSON.parse(localStorage.getItem('rapquiz_stats') || '{"badges":[]}');
                if(!st.badges.includes('freestyle')) {
                    st.badges.push('freestyle');
                    localStorage.setItem('rapquiz_stats', JSON.stringify(st));
-                   showNotification("ODZNAKA: FREESTYLE KING!", "var(--accent-yellow)");
+                   showNotification('ODZNAKA: FREESTYLE KING! ⚡', 'var(--accent-yellow)');
                }
             }
         } else {
             pts = 80;
             state.fastStreak = 0;
+            state.ultraFastStreak = 0;
         }
         
         state.score += pts;
         state.streak++;
+        state.correct_answers++;
         
         // Bonusy za streak
         if (state.streak === 5) {
             state.score += 50;
-            showNotification("🔥 5 WZOROWO (+50) 🔥", "var(--accent-orange)");
+            showNotification('🔥 5 WZOROWO (+50) 🔥', 'var(--accent-orange)');
+            // GORAĆA PŁYTA badge
+            if (!state.isDaily && !window.isMultiplayer) {
+                let st = JSON.parse(localStorage.getItem('rapquiz_stats') || '{"badges":[]}');
+                if (!st.badges.includes('goracaplyta')) { st.badges.push('goracaplyta'); localStorage.setItem('rapquiz_stats', JSON.stringify(st)); }
+            }
         } else if (state.streak === 10) {
             state.score += 150;
-            showNotification("⚡ FREESTYLE KING (+150) ⚡", "var(--accent-yellow)");
+            showNotification('⚡ FREESTYLE KING (+150) ⚡', 'var(--accent-yellow)');
+            // ULICZNY FILOZOF badge
+            if (!state.isDaily && !window.isMultiplayer) {
+                let st = JSON.parse(localStorage.getItem('rapquiz_stats') || '{"badges":[]}');
+                if (!st.badges.includes('uliczny')) { st.badges.push('uliczny'); localStorage.setItem('rapquiz_stats', JSON.stringify(st)); }
+            }
         } else {
-            showNotification(`+${pts} PKT`, "var(--green)");
+            showNotification(`+${pts} PKT`, 'var(--green)');
         }
         
     } else {
         // Zła odpowiedz (lub timeout)
-        if (state.isEndless) state.mistakes++;
+        state.mistakes++; // Zliczaj błędy dla wszystkich trybów
         state.streak = 0;
         state.fastStreak = 0;
+        state.wrong_answers++;
         
         if (btnElement) btnElement.classList.add('wrong');
         
@@ -328,17 +405,8 @@ function handleAnswer(selectedIndex, btnElement) {
         
         showNotification("BŁĄD!", "var(--accent-red)");
     }
-    
-    if (state.isDaily) {
-       state.mistakes++;
-       const statsContainer = document.getElementById('gameStatsContainer');
-       if (statsContainer) {
-           document.getElementById('gameScore').textContent = state.score;
-           document.getElementById('gameMistakes').textContent = `${Math.min(state.mistakes + 1, 10)}/10`;
-       }
-    } else {
-       updateUIStats();
-    }
+    // Usunięto błędne podwójne zliczanie dla Daily
+    updateUIStats();
     
     // Oczekiwanie na przejscie
     setTimeout(() => {
@@ -347,11 +415,25 @@ function handleAnswer(selectedIndex, btnElement) {
 }
 
 function updateUIStats() {
-    document.getElementById('gameScore').textContent = state.score;
-    if (state.isEndless) {
-        document.getElementById('gameMistakes').textContent = `${state.mistakes}/2`;
-    } else {
-        document.getElementById('gameMistakes').textContent = `-`;
+    const scoreEl = document.getElementById('gameScore');
+    const mistakesEl = document.getElementById('gameMistakes');
+    const qNumEl = document.getElementById('gameQuestionNum');
+    
+    if (scoreEl) scoreEl.textContent = state.score;
+    
+    if (mistakesEl) {
+        if (state.isDaily) {
+            mistakesEl.textContent = `${state.mistakes}/10`;
+        } else if (state.isEndless) {
+            mistakesEl.textContent = `${state.mistakes}/1`; // Endless: 1 błąd = koniec
+        } else {
+            mistakesEl.textContent = `${state.mistakes}/2`; // Klasyk: 2 błędy = koniec
+        }
+    }
+    
+    if (qNumEl) {
+        let total = state.isEndless ? "∞" : (state.totalQuestions || 20);
+        qNumEl.textContent = `${state.currentQuestionNum}/${total}`;
     }
 }
 
@@ -366,7 +448,13 @@ function showNotification(msg, color) {
     }, 1500);
 }
 
-// ── Koła Ratunkowe (Lifelines) ────────────────────────────────────
+// Funkcja obsługująca własny modal
+function showLifelineModal(text) {
+    window.pauseGameTimer(true); // Zapauzuj timer
+    document.getElementById('lifelineText').textContent = text;
+    document.getElementById('lifelineModal').style.display = 'flex';
+}
+
 function useLifeline(type) {
     if (!state.lifelines[type]) return;
     
@@ -380,7 +468,7 @@ function useLifeline(type) {
             execute5050();
             break;
         case 'phone':
-            alert(`📞 Ziąbek pisze SMS-em:\n\n"${currentQuestion.hint}"`);
+            showLifelineModal(`📞 Ziąbek wysyła SMS:\n\n"${currentQuestion.hint}"`);
             break;
         case 'audience':
             executeAudience();
@@ -430,12 +518,14 @@ function executeAudience() {
     scores[others[1]] = split2;
     scores[others[2]] = split3;
     
-    let chart = "Wyniki Głosowania Publiczności:\n\n";
+    let chart = "📊 Wyniki Głosowania Publiczności:\n\n";
     scores.forEach((s, idx) => {
-        chart += `${String.fromCharCode(65 + idx)}: ${s}%\n`;
+        // Find the actual answer text to display it nicely
+        const answerText = currentQuestion.answers[idx] || String.fromCharCode(65 + idx);
+        chart += `${answerText}: ${s}%\n`;
     });
     
-    alert(chart);
+    showLifelineModal(chart);
 }
 
 function resetLifelinesUI() {
@@ -451,14 +541,36 @@ function resetLifelinesUI() {
 
 // ── Koniec Gry ────────────────────────────────────────────────────
 function endGame() {
+    if (!state.isGameActive) return;
+    state.isGameActive = false;
     clearInterval(timerInterval);
     showView('gameOverView');
+    
+    const scoreEl = document.getElementById('gameScore');
+    const mistakesEl = document.getElementById('gameMistakes');
+    const questionNumEl = document.getElementById('gameQuestionNum');
+
+    if(scoreEl) scoreEl.textContent = state.score;
+    if(mistakesEl) {
+        if (state.isDaily) mistakesEl.textContent = `${state.mistakes}/10`;
+        else if (state.isEndless) mistakesEl.textContent = `${state.mistakes}/1`;
+        else mistakesEl.textContent = `${state.mistakes}/2`;
+    }
+    if(questionNumEl) {
+        if(state.isEndless) questionNumEl.textContent = `${state.currentQuestionNum}/∞`;
+        else questionNumEl.textContent = `${state.currentQuestionNum}/20`;
+    }
     
     const scoreboardEl = document.getElementById('mpScoreboard');
     if (scoreboardEl) scoreboardEl.style.display = 'none';
     
     document.getElementById('finalScore').textContent = state.score;
     document.getElementById('finalStreak').textContent = state.streak;
+    
+    const finalCorrectEl = document.getElementById('finalCorrect');
+    if (finalCorrectEl) {
+        finalCorrectEl.textContent = `${state.correct_answers}/${state.totalQuestions}`;
+    }
     
     const msgEl = document.getElementById('gameOverMsg');
     if (state.score > 1000) {
@@ -478,7 +590,6 @@ function endGame() {
 
 // Zapis Wyników oraz Odznak (Faza 7)
 function saveScore(score) {
-    console.log("Zapisano wynik do API: ", score);
     
     const userStr = localStorage.getItem('rapquiz_user');
     if(userStr) {
@@ -491,6 +602,8 @@ function saveScore(score) {
                 body: JSON.stringify({ 
                     username: user.username, 
                     score: score,
+                    correctAnswers: state.correct_answers,
+                    wrongAnswers: state.wrong_answers,
                     usedLifelines: {
                        fifty_fifty: document.getElementById('ll-5050').classList.contains('used'),
                        audience: document.getElementById('ll-audience').classList.contains('used'),
@@ -503,33 +616,114 @@ function saveScore(score) {
     }
     
     // Zapis statystyk lokalnie
-    let stats = JSON.parse(localStorage.getItem('rapquiz_stats') || '{"gamesPlayed":0, "highScore":0, "totalScore":0, "badges":[]}');
+    const lastDailyPlay = localStorage.getItem('rapquiz_dailyLastPlay');
+    let stats = JSON.parse(localStorage.getItem('rapquiz_stats') || '{"gamesPlayed":0,"highScore":0,"totalScore":0,"badges":[],"correctAnswers":0,"wrongAnswers":0,"tourneyWins":0,"mpWins":0}');
     stats.gamesPlayed++;
-    stats.totalScore = (stats.totalScore || 0) + score;   // suma ze wszystkich gier
+    stats.totalScore = (stats.totalScore || 0) + score;
+    stats.correctAnswers = (stats.correctAnswers || 0) + state.correct_answers;
+    stats.wrongAnswers = (stats.wrongAnswers || 0) + state.wrong_answers;
     if(score > stats.highScore) stats.highScore = score;
-    
-    if(!stats.badges.includes('rookie') && stats.gamesPlayed >= 10) stats.badges.push('rookie');
-    if(!stats.badges.includes('diamond') && score >= 1000) stats.badges.push('diamond');
-    
-    if(!stats.badges.includes('zlotaera') && state.category === '1990-2010' && state.mistakes === 0 && score > 0) stats.badges.push('zlotaera');
-    
-    let usedLifelines = !state.lifelines['5050'] || !state.lifelines['phone'] || !state.lifelines['audience'] || !state.lifelines['skip'];
-    if(!stats.badges.includes('milczacy') && !usedLifelines && state.mistakes < 2 && !state.isDaily && score > 0) stats.badges.push('milczacy');
-    
+
+    // KONESER: zagrane kategorie
+    if (!stats.playedCategories) stats.playedCategories = [];
+    const ERA_CATS = ['1990-2010', '2010-2020', '2020-now'];
+    if (state.category && ERA_CATS.includes(state.category) && !stats.playedCategories.includes(state.category)) {
+        stats.playedCategories.push(state.category);
+    }
+
+    // DAILY GRIND: streak dzienny
+    if (state.isDaily) {
+        const today = new Date().toISOString().split('T')[0];
+        const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+        if (lastDailyPlay === yesterday) {
+            stats.dailyStreak = (stats.dailyStreak || 1) + 1;
+        } else if (lastDailyPlay !== today) {
+            stats.dailyStreak = 1;
+        }
+    }
+
+    // === ODZNAKI ===
+    const addBadge = (key) => { if (!stats.badges.includes(key)) stats.badges.push(key); };
+
+    // Istniejące
+    if (stats.gamesPlayed >= 10) addBadge('rookie');
+    if (score >= 1000) addBadge('diamond');
+    if (state.category === '1990-2010' && state.mistakes === 0 && score > 0) addBadge('zlotaera');
+    const anyLifelineUsed = !state.lifelines['5050'] || !state.lifelines['phone'] || !state.lifelines['audience'] || !state.lifelines['skip'];
+    if (!anyLifelineUsed && state.mistakes < 2 && !state.isDaily && score > 0) addBadge('milczacy');
+
+    // Nowe: Umiejętności
+    if (!state.isEndless && !state.isDaily && !window.isMultiplayer && state.mistakes === 0 && score > 0) addBadge('snajper');
+    if (state.isEndless && state.correct_answers >= 15) addBadge('maraton');
+    const allLifelinesUsed = !state.lifelines['5050'] && !state.lifelines['phone'] && !state.lifelines['audience'] && !state.lifelines['skip'];
+    if (allLifelinesUsed && !state.isDaily && !window.isMultiplayer && score > 0) addBadge('ratownik');
+
+    // Nowe: Postęp
+    const h = new Date().getHours();
+    if (h >= 23 || h < 5) addBadge('nocnazmiana');
+    if (stats.totalScore >= 5000) addBadge('karciana');
+    if (stats.gamesPlayed >= 50) addBadge('profesor');
+    if (stats.playedCategories && stats.playedCategories.length >= 3) addBadge('koneser');
+    if ((stats.dailyStreak || 0) >= 3) addBadge('dailygrind');
+
+    // LEGENDA: 10+ innych odznak
+    if (stats.badges.filter(b => b !== 'legenda').length >= 10) addBadge('legenda');
+
     localStorage.setItem('rapquiz_stats', JSON.stringify(stats));
 
     if (state.isDaily) {
         const today = new Date().toISOString().split('T')[0];
         localStorage.setItem('rapquiz_dailyLastPlay', today);
-        
+
         const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:4000' : '';
         const userStr = localStorage.getItem('rapquiz_user');
         const username = userStr ? JSON.parse(userStr).username : 'Anonim';
-        
+
         fetch(`${API_URL}/api/daily/submit`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, score: score, date: today })
-        }).catch(err => console.error("Error saving daily score", err));
+        }).catch(err => console.error('Error saving daily score', err));
     }
 }
+
+function leaveGameEarly() {
+    console.log(">>> KLIKNIĘTO PRZYCISK OPUŚĆ <<<");
+    if (typeof window.pauseGameTimer === 'function') {
+        window.pauseGameTimer(true);
+    }
+    
+    const msg = "Czy na pewno chcesz opuścić aktualnie trwającą grę? Twój obecny wynik nie zostanie zapisany, a jeśli grasz ze znajomymi - zostaniesz oznaczony jako 'Wyszedł'.";
+    
+    const onConfirm = () => {
+        if (typeof timerInterval !== 'undefined' && timerInterval) clearInterval(timerInterval);
+        state.isGameActive = false;
+        
+        if (window.isMultiplayer) {
+            if (window.multiplayerLeaveLobby) window.multiplayerLeaveLobby();
+        } else {
+            showMenu();
+        }
+    };
+    
+    const onCancel = () => {
+        if (typeof window.pauseGameTimer === 'function') window.pauseGameTimer(false);
+    };
+
+    if (window.showCustomConfirm) {
+        window.showCustomConfirm(msg, onConfirm, onCancel);
+    } else {
+        if (confirm(msg)) onConfirm();
+        else onCancel();
+    }
+}
+
+// Global Exports
+window.showView = showView;
+window.showMenu = showMenu;
+window.initGame = initGame;
+window.useLifeline = useLifeline;
+window.handleAnswer = handleAnswer;
+window.leaveGameEarly = leaveGameEarly;
+
+})();

@@ -5,23 +5,34 @@ let isHost = false;
 window.isMultiplayer = false;
 let mpState = {
    scoreMe: 0,
-   opponents: [], // tablica z {id, name, score}
+   aliveMe: true,
+   isTourney: false,
+   opponents: [], // tablica z {id, name, score, alive}
    round: 0
 };
 
 function updateLobbyPlayersList(players) {
-    for (let i = 1; i <= 4; i++) {
-        const pEl = document.getElementById('lobbyPlayer' + i);
-        if (pEl) {
-            if (i - 1 < players.length) {
-                const p = players[i - 1];
-                pEl.textContent = p.id === socket.id ? `TY (${p.name})` : p.name;
-                pEl.style.color = p.id === socket.id ? 'var(--accent-yellow)' : 'var(--text-main)';
-            } else {
-                pEl.textContent = i === 2 ? `CZEKAM NA INNYCH GRACZY...` : `...`;
-                pEl.style.color = 'var(--text-dim)';
-            }
+    const container = document.getElementById('lobbyPlayersContainer');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    // Zawsze pokazujemy aktualnych graczy i ewentualnie puste miejsca do limitu 20
+    const displaySlots = Math.max(2, players.length + 1);
+    const maxSlots = Math.min(displaySlots, 20);
+    
+    for (let i = 0; i < maxSlots; i++) {
+        const div = document.createElement('div');
+        if (i < players.length) {
+            const p = players[i];
+            div.textContent = p.id === socket.id ? `TY (${p.name})` : p.name;
+            div.style.color = p.id === socket.id ? 'var(--accent-yellow)' : 'var(--text-main)';
+            div.style.fontSize = i < 2 ? '1.5rem' : '1.2rem';
+        } else {
+            div.textContent = (i === 1 && players.length === 1) ? `CZEKAM NA INNYCH GRACZY...` : `...`;
+            div.style.color = 'var(--text-dim)';
+            div.style.fontSize = i < 2 ? '1.5rem' : '1.2rem';
         }
+        container.appendChild(div);
     }
 }
 
@@ -62,8 +73,10 @@ function initSocket() {
         socket.on('game_started', (data) => {
             window.isMultiplayer = true;
             mpState.scoreMe = 0;
+            mpState.aliveMe = true;
+            mpState.isTourney = data.isTourney || false;
             mpState.round = 0;
-            mpState.opponents = data.players.filter(p => p.id !== socket.id).map(p => ({ id: p.id, name: p.name, score: 0 }));
+            mpState.opponents = data.players.filter(p => p.id !== socket.id).map(p => ({ id: p.id, name: p.name, score: 0, alive: true }));
             updateMPStatsUI();
             
             document.querySelector('.lifelines-bar').style.display = 'none';
@@ -74,18 +87,29 @@ function initSocket() {
             mpState.round++;
             document.getElementById('questionText').textContent = `[${mpState.round}/20] ` + q.question;
             renderAnswersMP(q.answers);
-            startMPTimer();
+            if (mpState.aliveMe) {
+                startMPTimer();
+            } else {
+                // Gracz martwy tylko ogląda
+                mpTimeLeft = 15;
+                Array.from(document.getElementById('answersGrid').children).forEach(b => b.disabled = true);
+                document.getElementById('timerBar').style.width = '0%';
+            }
         });
 
         socket.on('round_results', (results) => {
             clearInterval(mpTimerInterval);
-            const me = results[socket.id] || {pointsEarned:0};
+            const me = results[socket.id] || {pointsEarned:0, alive:true};
             
             mpState.scoreMe += me.pointsEarned;
+            if (mpState.isTourney && !me.alive) mpState.aliveMe = false;
             
             mpState.opponents.forEach(opp => {
                 const r = results[opp.id];
-                if (r) opp.score += r.pointsEarned;
+                if (r) {
+                    opp.score += r.pointsEarned;
+                    if (mpState.isTourney && !r.alive) opp.alive = false;
+                }
             });
             
             updateMPStatsUI();
@@ -93,9 +117,13 @@ function initSocket() {
             let color = 'var(--text-main)';
             let msg = `Otrzymujesz +${me.pointsEarned} pkt`;
             
-            // Proste chwalenie, jeśli zdobyliśmy więcej niż 0 i obiektywnie ładnie 
             if(me.pointsEarned >= 2) { color='var(--accent-yellow)'; msg='DOBRZE! '+msg; }
             else if (me.pointsEarned === 0) { color='var(--accent-red)'; msg='PUDŁO! (Brak pkt)'; }
+            
+            if (mpState.isTourney && !mpState.aliveMe) {
+                msg = "ODPADASZ! ZŁA ODPOWIEDŹ!";
+                color = 'var(--accent-red)';
+            }
             
             showNotification(msg, color);
             
@@ -115,9 +143,14 @@ function initSocket() {
             document.getElementById('finalStreak').textContent = "-";
             
             const msgEl = document.getElementById('gameOverMsg');
+            let isTourneyWin = false;
+            let isMultiplayerWin = false;
+
             if(final.winnerId === socket.id) {
                 msgEl.textContent = "🏆 WYGRYWASZ MECZ! Gratulacje!";
                 msgEl.style.color = "var(--accent-yellow)";
+                if (mpState.isTourney) isTourneyWin = true;
+                else isMultiplayerWin = true;
             } else if (final.winnerId === 'draw') {
                 msgEl.textContent = "🤝 REMIS!";
                 msgEl.style.color = "white";
@@ -125,6 +158,39 @@ function initSocket() {
                 msgEl.textContent = `Porażka. Przeciwnik zgarnął wygraną!`;
                 msgEl.style.color = "var(--accent-red)";
             }
+            
+            const userStr = localStorage.getItem('rapquiz_user');
+            if (userStr) {
+                try {
+                    const user = JSON.parse(userStr);
+                    const apiEndpoint = API_URL_SOCKET || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:4000' : '');
+                    fetch(`${apiEndpoint}/api/ranking/save`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            username: user.username, 
+                            score: mpState.scoreMe,
+                            isTourneyWin: isTourneyWin,
+                            isMultiplayerWin: isMultiplayerWin
+                        })
+                    }).catch(console.error);
+                } catch(e) {}
+            }
+            
+            // Zapis statystyk MP lokalnie do Profilu
+            let stats = JSON.parse(localStorage.getItem('rapquiz_stats') || '{"gamesPlayed":0,"highScore":0,"totalScore":0,"badges":[],"correctAnswers":0,"wrongAnswers":0,"tourneyWins":0,"mpWins":0}');
+            stats.gamesPlayed++;
+            stats.mpGamesPlayed = (stats.mpGamesPlayed || 0) + 1;
+            stats.totalScore = (stats.totalScore || 0) + mpState.scoreMe;
+            if(mpState.scoreMe > stats.highScore) stats.highScore = mpState.scoreMe;
+            if(isTourneyWin) stats.tourneyWins = (stats.tourneyWins || 0) + 1;
+            if(isMultiplayerWin) stats.mpWins = (stats.mpWins || 0) + 1;
+            // Odznaki MP
+            const addB = (k) => { if (!stats.badges.includes(k)) stats.badges.push(k); };
+            if (stats.mpGamesPlayed >= 1) addB('showman');
+            if ((stats.mpWins || 0) >= 5) addB('bossulicy');
+            if ((stats.mpWins || 0) >= 10) addB('klan');
+            localStorage.setItem('rapquiz_stats', JSON.stringify(stats));
             
             const scoreboardEl = document.getElementById('mpScoreboard');
             if (scoreboardEl && final.scores) {
@@ -154,7 +220,9 @@ function initSocket() {
         
         socket.on('opponent_disconnected', () => {
             if (window.isMultiplayer || currentRoom) {
-                alert("Przeciwnik opuścił grę lub salon!");
+                if (typeof mpTimerInterval !== 'undefined') clearInterval(mpTimerInterval);
+                if (typeof timerInterval !== 'undefined') clearInterval(timerInterval);
+                showCustomAlert("Przeciwnik opuścił grę lub salon!");
                 window.isMultiplayer = false;
                 currentRoom = null;
                 document.querySelector('.lifelines-bar').style.display = 'flex';
@@ -253,8 +321,14 @@ function renderAnswersMP(answers) {
 
 function updateMPStatsUI() {
     const container = document.getElementById('gameStatsContainer');
-    let html = `TY: <span class="gold-text">${mpState.scoreMe}</span> | `;
-    html += mpState.opponents.map(o => `${o.name}: <span class="red-text">${o.score}</span>`).join(' | ');
+    if(!container) return;
+    let meDisplay = mpState.aliveMe ? `<span class="gold-text">${mpState.scoreMe}</span>` : `<span style="color:var(--accent-red); font-weight:bold;">☠️</span>`;
+    let html = `WYNIK (TY): ${meDisplay} | RUNDA: <span class="gold-text">${mpState.round}/20</span> | `;
+    
+    html += mpState.opponents.map(o => {
+        let oppScore = o.alive ? `<span class="red-text">${o.score}</span>` : `<span style="color:var(--text-dim);">☠️</span>`;
+        return `${o.name}: ${oppScore}`;
+    }).join(' | ');
     container.innerHTML = html;
 }
 
