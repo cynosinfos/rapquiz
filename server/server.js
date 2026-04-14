@@ -17,12 +17,7 @@ try {
   RAPQUIZ_QUESTIONS = JSON.parse(jsonStr);
 } catch(e) { console.error("Error loading questions in server:", e); }
 
-// ── TOURNAMENTS STATE ──
-const tournaments = {}; 
-
-function pushTourneyUpdate(io, code) {
-    io.to(code).emit('tourney_update', tournaments[code]);
-}
+// State handled purely by rooms
 
 // ── MULTIPLAYER STATE ──
 const rooms = {};  // Kody pokoi -> info
@@ -140,71 +135,59 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'Serwer RAPQUIZ działa poprawie.' });
 });
 
+// ── STRONY STATYCZNE (AdSense) ──
+app.get('/kontakt', (req, res) => {
+  res.sendFile(path.join(__dirname, '../kontakt.html'));
+});
+
+app.get('/o-projekcie', (req, res) => {
+  res.sendFile(path.join(__dirname, '../o-projekcie.html'));
+});
+
+// ── FORMULARZ KONTAKTOWY ──
+app.post('/api/contact', async (req, res) => {
+  try {
+    const { name, email, topic, message } = req.body;
+    if (!name || !message || message.length < 10) {
+      return res.status(400).json({ success: false, message: 'Nieprawidłowe dane formularza.' });
+    }
+    // Logujemy wiadomość do konsoli (można podłączyć e-mail lub bazę)
+    console.log(`📩 [KONTAKT] Od: ${name} <${email || 'brak'}> | Temat: ${topic} | Wiad: ${message.slice(0, 100)}`);
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Błąd /api/contact:', e);
+    res.status(500).json({ success: false });
+  }
+});
+
 // Zdarzenia Socket.io
 io.on('connection', (socket) => {
   console.log(`📡 Nowy gracz połączony: ${socket.id}`);
     
-    // --- TURNIEJE ---
+    // --- TURNIEJE (IGRZYSKA BATTLE ROYALE) ---
     socket.on('create_tournament', (data) => {
         let code;
-        do { code = 'TRN-' + Math.floor(100 + Math.random() * 900); } while (tournaments[code]);
-        
-        tournaments[code] = {
-            code, hostId: socket.id, state: 'waiting', 
+        do { code = 'TRN-' + Math.floor(100 + Math.random() * 900); } while (rooms[code]);
+        rooms[code] = {
+            id: code, hostId: socket.id, hostName: data.username,
             players: [{id: socket.id, name: data.username}],
-            semis: [{p1:null, p2:null, winner:null, room:null}, {p3:null, p4:null, winner:null, room:null}],
-            final: {p1:null, p2:null, winner:null, room:null}
+            state: 'waiting', isTourney: true
         };
         socket.join(code);
-        socket.emit('tourney_created', { code, bracket: tournaments[code] });
+        socket.emit('room_created', { roomCode: code, players: rooms[code].players, isTourney: true });
     });
 
     socket.on('join_tournament', (data) => {
-        const tor = tournaments[data.code];
-        if (!tor) return socket.emit('tourney_error', 'Turniej nie istnieje');
-        if (tor.state !== 'waiting') return socket.emit('tourney_error', 'Turniej już trwa');
-        if (tor.players.length >= 4) return socket.emit('tourney_error', 'Turniej jest pełen (max 4)');
-        if (tor.players.find(p => p.id === socket.id)) return;
+        const room = rooms[data.code];
+        if (!room || !room.isTourney) return socket.emit('room_error', 'Turniej o tym kodzie nie istnieje.');
+        if (room.players.length >= 20) return socket.emit('room_error', 'Turniej jest pełen (max 20).');
+        if (room.state !== 'waiting') return socket.emit('room_error', 'Turniej już wystartował.');
         
-        tor.players.push({id: socket.id, name: data.username});
+        room.players.push({id: socket.id, name: data.username});
         socket.join(data.code);
-        socket.emit('tourney_joined', { code: data.code, bracket: tor });
-        pushTourneyUpdate(io, data.code);
-    });
-
-    socket.on('leave_tournament', (data) => {
-        const tor = tournaments[data.code];
-        if(tor) {
-            tor.players = tor.players.filter(p => p.id !== socket.id);
-            socket.leave(data.code);
-            pushTourneyUpdate(io, data.code);
-            if(tor.players.length === 0) delete tournaments[data.code];
-        }
-    });
-
-    socket.on('start_tournament', (data) => {
-        const tor = tournaments[data.code];
-        if (!tor || tor.hostId !== socket.id || tor.players.length !== 4) return;
         
-        tor.state = 'semis';
-        
-        const shuffled = [...tor.players].sort(() => 0.5 - Math.random());
-        tor.semis[0].p1 = shuffled[0]; tor.semis[0].p2 = shuffled[1];
-        tor.semis[1].p1 = shuffled[2]; tor.semis[1].p2 = shuffled[3];
-        
-        const r1 = 'TM-' + Math.floor(100+Math.random()*900);
-        const r2 = 'TM-' + Math.floor(100+Math.random()*900);
-        tor.semis[0].room = r1; tor.semis[1].room = r2;
-        
-        rooms[r1] = { host: tor.semis[0].p1.id, category: data.category, players: [], currentRound:1, questions:[], scores:{}, readyCount:0, state:'waiting', tourney: data.code, tMatch: 'semi_0' };
-        rooms[r2] = { host: tor.semis[1].p1.id, category: data.category, players: [], currentRound:1, questions:[], scores:{}, readyCount:0, state:'waiting', tourney: data.code, tMatch: 'semi_1' };
-        
-        pushTourneyUpdate(io, data.code);
-        
-        io.to(tor.semis[0].p1.id).emit('tourney_match_start', { roomCode: r1 });
-        io.to(tor.semis[0].p2.id).emit('tourney_match_start', { roomCode: r1 });
-        io.to(tor.semis[1].p1.id).emit('tourney_match_start', { roomCode: r2 });
-        io.to(tor.semis[1].p2.id).emit('tourney_match_start', { roomCode: r2 });
+        socket.emit('room_joined', { roomCode: data.code, hostName: room.hostName, players: room.players, isTourney: true });
+        io.to(data.code).emit('player_joined', { players: room.players });
     });
 
     // --- POKOJE MULTIPLAYER LOBBY ---
@@ -227,7 +210,7 @@ io.on('connection', (socket) => {
   socket.on('join_room', (data) => {
      const room = rooms[data.roomCode];
      if (!room) return socket.emit('room_error', 'Nie znaleziono pokoju o tym kodzie.');
-     if (room.players.length >= 4) return socket.emit('room_error', 'Pokój jest pełny (max 4).');
+     if (room.players.length >= 10) return socket.emit('room_error', 'Pokój jest pełny (max 10).');
      if (room.state !== 'waiting') return socket.emit('room_error', 'Gra w tym pokoju już trwa.');
      
      room.players.push({id: socket.id, name: data.username});
@@ -255,10 +238,13 @@ io.on('connection', (socket) => {
          room.currentRound = -1;
          
          room.scores = {};
-         room.players.forEach(p => room.scores[p.id] = 0);
+         room.players.forEach(p => {
+             room.scores[p.id] = 0;
+             p.alive = true;
+         });
          room.answersThisRound = {};
          
-         io.to(room.id).emit('game_started', { players: room.players });
+         io.to(room.id).emit('game_started', { players: room.players, isTourney: room.isTourney });
          setTimeout(() => startNextRound(room), 2000);
      }
   });
@@ -282,7 +268,14 @@ io.on('connection', (socket) => {
       const room = rooms[data.roomCode];
       if (room && room.state === 'playing') {
           room.answersThisRound[socket.id] = { answerIndex: data.answerIndex, timeLeft: data.timeLeft };
-          if (Object.keys(room.answersThisRound).length === room.players.length) {
+          
+          const activePlayers = room.players.filter(p => !p.disconnected);
+          let allAnswered = true;
+          for (let p of activePlayers) {
+              if (!room.answersThisRound[p.id]) { allAnswered = false; break; }
+          }
+          
+          if (allAnswered) {
               clearTimeout(room.roundTimer);
               evaluateRound(room);
           }
@@ -294,94 +287,112 @@ io.on('connection', (socket) => {
       const results = { correctIndex: q.correct };
       
       let correctPlayers = room.players.filter(p => {
+          if (!p.alive) return false;
           let ans = room.answersThisRound[p.id];
           return ans && ans.answerIndex === q.correct;
       });
       correctPlayers.sort((a,b) => room.answersThisRound[b.id].timeLeft - room.answersThisRound[a.id].timeLeft);
 
       room.players.forEach(p => {
+          if (!p.alive) {
+              results[p.id] = { pointsEarned: 0, alive: false };
+              return;
+          }
+
           let ans = room.answersThisRound[p.id];
           let pts = 0;
           let pCorrect = ans && ans.answerIndex === q.correct;
           if (pCorrect) {
               pts += 2;
-              if (correctPlayers[0].id === p.id) pts += 1;
-              if (ans.timeLeft >= 10) pts += 1;
+              if (correctPlayers[0] && correctPlayers[0].id === p.id) pts += 1;
+              if (ans && ans.timeLeft >= 10) pts += 1;
+          } else {
+              // IGRZYSKA - błędna odpowiedź lub jej brak to eliminacja
+              if (room.isTourney) p.alive = false;
           }
           room.scores[p.id] += pts;
-          results[p.id] = { pointsEarned: pts };
+          results[p.id] = { pointsEarned: pts, alive: p.alive };
       });
       
       io.to(room.id).emit('round_results', results);
+      
+      if (room.isTourney) {
+          const aliveCount = room.players.filter(p => p.alive).length;
+          if (aliveCount <= 1 || room.currentRound >= room.questions.length - 1) {
+              setTimeout(() => endMultiplayerGame(room), 4000);
+              return;
+          }
+      }
+
       setTimeout(() => startNextRound(room), 4000);
   }
 
   function endMultiplayerGame(room) {
       room.state = 'ended';
       
-      const sorted = [...room.players].sort((a,b) => room.scores[b.id] - room.scores[a.id]);
-      let winnerId = sorted[0].id;
-      if (room.players.length > 1 && room.scores[sorted[0].id] === room.scores[sorted[1].id]) {
+      let eligible = room.players;
+      if (room.isTourney) {
+          const alive = room.players.filter(p => p.alive);
+          if (alive.length > 0) eligible = alive;
+      }
+      
+      const sorted = [...eligible].sort((a,b) => room.scores[b.id] - room.scores[a.id]);
+      let winnerId = sorted.length > 0 ? sorted[0].id : null;
+      if (sorted.length > 1 && room.scores[sorted[0].id] === room.scores[sorted[1].id]) {
           winnerId = 'draw';
       }
       
-      io.to(room.id).emit('multiplayer_game_over', { winnerId, scores: room.scores });
-      
-      // SPRAWDZANIE TURNIEJU
-      if (room.tourney) {
-          const tor = tournaments[room.tourney];
-          if (tor) {
-              const sorted = Object.keys(room.scores).sort((a,b) => room.scores[b] - room.scores[a]);
-              const winnerId = sorted[0];
-              const winnerName = room.players.find(p => p.socketId === winnerId)?.username || 'Gracz'; // Assuming players array has objects with socketId and username
-              
-              if(room.tMatch === 'semi_0') tor.semis[0].winner = { id: winnerId, name: winnerName };
-              if(room.tMatch === 'semi_1') tor.semis[1].winner = { id: winnerId, name: winnerName };
-              
-              io.to(room.id).emit('tourney_match_ended', { msg: "Oczekiwanie na resztę drabinki..." });
-              pushTourneyUpdate(io, room.tourney);
-              
-              if(tor.state === 'semis' && tor.semis[0].winner && tor.semis[1].winner) {
-                  tor.state = 'final';
-                  const f_r = 'TF-' + Math.floor(100+Math.random()*900);
-                  tor.final = { p1: tor.semis[0].winner, p2: tor.semis[1].winner, winner: null, room: f_r };
-                  rooms[f_r] = { host: tor.final.p1.id, category: room.category, players: [], currentRound:1, questions:[], scores:{}, readyCount:0, state:'waiting', tourney: tor.code, tMatch: 'final' };
-                  
-                  setTimeout(() => {
-                     pushTourneyUpdate(io, tor.code);
-                     io.to(tor.final.p1.id).emit('tourney_match_start', { roomCode: f_r });
-                     io.to(tor.final.p2.id).emit('tourney_match_start', { roomCode: f_r });
-                  }, 5000);
-              }
-              else if (tor.state === 'final' && room.tMatch === 'final') {
-                 tor.final.winner = { id: winnerId, name: winnerName };
-                 tor.state = 'done';
-                 pushTourneyUpdate(io, room.tourney);
-                 io.to(room.id).emit('tourney_match_ended', { msg: "Zwyciężył " + winnerName });
-              }
-          }
-      }
+      io.to(room.id).emit('multiplayer_game_over', { winnerId, scores: room.scores, isTourney: room.isTourney });
       
       delete rooms[room.id];
   }
 
-  socket.on('leave_room', (data) => {
-      const room = rooms[data.roomCode];
-      if (room) {
-           io.to(room.id).emit('opponent_disconnected');
-           delete rooms[room.id];
+  function handlePlayerExit(socketId) {
+      for (let code in rooms) {
+          let r = rooms[code];
+          const pIndex = r.players.findIndex(p => p.id === socketId);
+          if (pIndex !== -1) {
+              if (r.state === 'waiting') {
+                  r.players.splice(pIndex, 1);
+                  if (r.players.length === 0) {
+                      delete rooms[code];
+                  } else {
+                      if (r.hostId === socketId) {
+                          r.hostId = r.players[0].id;
+                          r.hostName = r.players[0].name;
+                      }
+                      io.to(r.id).emit('player_joined', { players: r.players });
+                  }
+              } else {
+                  // Gra trwa
+                  r.players[pIndex].alive = false;
+                  r.players[pIndex].disconnected = true;
+                  if (!r.players[pIndex].name.includes('(Wyszedł)')) {
+                      r.players[pIndex].name += " (Wyszedł)";
+                  }
+                  
+                  const activePlayers = r.players.filter(p => !p.disconnected);
+                  if (activePlayers.length === 0) {
+                      delete rooms[code]; // Wszyscy opuścili pokój
+                  } else {
+                      // Jeśli opuszczający gracz blokował timer, wymuś sprawdzenie tury
+                      if (Object.keys(r.answersThisRound).length >= activePlayers.length) {
+                          clearTimeout(r.roundTimer);
+                          evaluateRound(r);
+                      }
+                  }
+              }
+          }
       }
+  }
+
+  socket.on('leave_room', (data) => {
+      handlePlayerExit(socket.id);
   });
 
   socket.on('disconnect', () => {
     console.log(`🔴 Gracz odłączony: ${socket.id}`);
-    for (let code in rooms) {
-        let r = rooms[code];
-        if (r.players.find(p => p.id === socket.id)) {
-            io.to(r.id).emit('opponent_disconnected');
-            delete rooms[code];
-        }
-    }
+    handlePlayerExit(socket.id);
   });
 });
 

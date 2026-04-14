@@ -13,6 +13,10 @@
   <meta property="og:description" content="Czy znasz historię polskiego hip-hopu? Sprawdź się w największym rapowym quizie online!">
   <meta property="og:image" content="https://rapq.pl/assets/images/logo.png">
 
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4739940420031961"
+       crossorigin="anonymous"></script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=VT323&display=swap" rel="stylesheet" />
@@ -99,6 +103,15 @@
           <button class="btn btn-outline" id="btnShare" onclick="shareGame()" style="flex:1; border-color:var(--accent-blue); color:var(--accent-blue);">
             🔗&nbsp; UDOSTĘPNIJ
           </button>
+        </div>
+
+        <div style="display:flex; gap:10px; width:100%;">
+          <a href="/o-projekcie" class="btn btn-outline" style="flex:1; text-decoration:none; font-size:1rem; border-color:#555; color:#aaa;">
+            📖&nbsp; O PROJEKCIE
+          </a>
+          <a href="/kontakt" class="btn btn-outline" style="flex:1; text-decoration:none; font-size:1rem; border-color:#555; color:#aaa;">
+            📬&nbsp; KONTAKT
+          </a>
         </div>
 
       </div>
@@ -511,6 +524,10 @@
   <footer>
     <span>RAPQUIZ © 2026</span>
     <span id="footerTime"></span>
+    <div style="margin-top: 10px; display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+      <a href="/o-projekcie" style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim); text-decoration: none; letter-spacing: 1px;" onmouseover="this.style.color='var(--accent-gold)'" onmouseout="this.style.color='var(--text-dim)'">O PROJEKCIE</a>
+      <a href="/kontakt" style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim); text-decoration: none; letter-spacing: 1px;" onmouseover="this.style.color='var(--accent-gold)'" onmouseout="this.style.color='var(--text-dim)'">KONTAKT</a>
+    </div>
   </footer>
 
 </div><!-- /#app -->

@@ -1,3 +1,9 @@
 RewriteEngine On
+
+# HTTP → HTTPS
 RewriteCond %{HTTPS} off
 RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Strony statyczne (AdSense)
+RewriteRule ^kontakt/?$ /kontakt.html [L]
+RewriteRule ^o-projekcie/?$ /o-projekcie.html [L]
