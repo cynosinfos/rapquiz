@@ -430,6 +430,7 @@ async function openProfileModal() {
    } catch(e) { console.warn('Błąd synchronizacji profilu:', e); }
    
    const stats = JSON.parse(localStorage.getItem('rapquiz_stats') || '{"gamesPlayed":0, "highScore":0, "totalScore":0, "badges":[], "correctAnswers":0, "wrongAnswers":0, "tourneyWins":0, "mpWins":0}');
+   if (!stats.badges) stats.badges = [];
    document.getElementById('profGames').textContent = stats.gamesPlayed || 0;
    document.getElementById('profHighscore').textContent = stats.highScore || 0;
    

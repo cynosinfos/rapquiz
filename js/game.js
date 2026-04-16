@@ -350,6 +350,7 @@ function handleAnswer(selectedIndex, btnElement) {
                 state.ultraFastStreak = (state.ultraFastStreak || 0) + 1;
                 if (state.ultraFastStreak >= 5 && !state.isDaily && !window.isMultiplayer) {
                     let st = JSON.parse(localStorage.getItem('rapquiz_stats') || '{"badges":[]}');
+                    if (!st.badges) st.badges = [];
                     if (!st.badges.includes('turbo')) {
                         st.badges.push('turbo');
                         localStorage.setItem('rapquiz_stats', JSON.stringify(st));
@@ -361,6 +362,7 @@ function handleAnswer(selectedIndex, btnElement) {
             }
             if(state.fastStreak >= 10 && !state.isDaily && !window.isMultiplayer) {
                let st = JSON.parse(localStorage.getItem('rapquiz_stats') || '{"badges":[]}');
+               if (!st.badges) st.badges = [];
                if(!st.badges.includes('freestyle')) {
                    st.badges.push('freestyle');
                    localStorage.setItem('rapquiz_stats', JSON.stringify(st));
@@ -383,6 +385,7 @@ function handleAnswer(selectedIndex, btnElement) {
             // GORAĆA PŁYTA badge
             if (!state.isDaily && !window.isMultiplayer) {
                 let st = JSON.parse(localStorage.getItem('rapquiz_stats') || '{"badges":[]}');
+                if (!st.badges) st.badges = [];
                 if (!st.badges.includes('goracaplyta')) { st.badges.push('goracaplyta'); localStorage.setItem('rapquiz_stats', JSON.stringify(st)); }
             }
         } else if (state.streak === 10) {
@@ -391,6 +394,7 @@ function handleAnswer(selectedIndex, btnElement) {
             // ULICZNY FILOZOF badge
             if (!state.isDaily && !window.isMultiplayer) {
                 let st = JSON.parse(localStorage.getItem('rapquiz_stats') || '{"badges":[]}');
+                if (!st.badges) st.badges = [];
                 if (!st.badges.includes('uliczny')) { st.badges.push('uliczny'); localStorage.setItem('rapquiz_stats', JSON.stringify(st)); }
             }
         } else {
@@ -583,7 +587,8 @@ function endGame() {
     
     const finalCorrectEl = document.getElementById('finalCorrect');
     if (finalCorrectEl) {
-        finalCorrectEl.textContent = `${state.correct_answers}/${state.totalQuestions}`;
+        if (state.isEndless) finalCorrectEl.textContent = `${state.correct_answers}`;
+        else finalCorrectEl.textContent = `${state.correct_answers}/${state.totalQuestions}`;
     }
     
     const msgEl = document.getElementById('gameOverMsg');
@@ -632,6 +637,7 @@ function saveScore(score) {
     // Zapis statystyk lokalnie
     const lastDailyPlay = localStorage.getItem('rapquiz_dailyLastPlay');
     let stats = JSON.parse(localStorage.getItem('rapquiz_stats') || '{"gamesPlayed":0,"highScore":0,"totalScore":0,"badges":[],"correctAnswers":0,"wrongAnswers":0,"tourneyWins":0,"mpWins":0}');
+    if (!stats.badges) stats.badges = [];
     stats.gamesPlayed++;
     stats.totalScore = (stats.totalScore || 0) + score;
     stats.correctAnswers = (stats.correctAnswers || 0) + state.correct_answers;

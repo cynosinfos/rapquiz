@@ -202,6 +202,7 @@ function initSocket() {
             
             // Zapis statystyk MP lokalnie do Profilu
             let stats = JSON.parse(localStorage.getItem('rapquiz_stats') || '{"gamesPlayed":0,"highScore":0,"totalScore":0,"badges":[],"correctAnswers":0,"wrongAnswers":0,"tourneyWins":0,"mpWins":0}');
+            if (!stats.badges) stats.badges = [];
             stats.gamesPlayed++;
             stats.mpGamesPlayed = (stats.mpGamesPlayed || 0) + 1;
             stats.totalScore = (stats.totalScore || 0) + finalMyScore;
