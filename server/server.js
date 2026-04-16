@@ -44,12 +44,6 @@ app.use('/api/ranking', rankingRoutes);
 // Serwowanie statycznych plików frontendu (HTML, CSS, JS, obrazy)
 app.use(express.static(path.join(__dirname, '../')));
 
-// Wszystkie inne żądania (nie-API) przekierowujemy do index.html
-app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api')) return next();
-    res.sendFile(path.join(__dirname, '../index.html'));
-});
-
 // Daily Challenge in-memory state
 const dailyRankings = {}; // { 'YYYY-MM-DD': { 'username': score } }
 
@@ -177,6 +171,12 @@ app.post('/api/contact', async (req, res) => {
     console.error('Błąd /api/contact:', e);
     res.status(500).json({ success: false });
   }
+});
+
+// Wszystkie inne żądania (nie-API) przekierowujemy do index.html
+app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(path.join(__dirname, '../index.html'));
 });
 
 // Zdarzenia Socket.io
