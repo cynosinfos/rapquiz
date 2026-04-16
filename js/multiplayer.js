@@ -169,6 +169,17 @@ function initSocket() {
                 msgEl.style.color = "var(--accent-red)";
             }
             
+            let myCorrect = 0;
+            let myWrong = 0;
+            if (final.history) {
+                final.history.forEach(h => {
+                    if (h.answers && h.answers[socket.id] === true) myCorrect++;
+                    else if (h.answers && h.answers[socket.id] === false) myWrong++;
+                });
+            }
+            
+            const finalMyScore = (final.scores && final.scores[socket.id]) !== undefined ? final.scores[socket.id] : mpState.scoreMe;
+
             const userStr = localStorage.getItem('rapquiz_user');
             if (userStr) {
                 try {
@@ -179,7 +190,9 @@ function initSocket() {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ 
                             username: user.username, 
-                            score: mpState.scoreMe,
+                            score: finalMyScore,
+                            correctAnswers: myCorrect,
+                            wrongAnswers: myWrong,
                             isTourneyWin: isTourneyWin,
                             isMultiplayerWin: isMultiplayerWin
                         })
@@ -191,8 +204,10 @@ function initSocket() {
             let stats = JSON.parse(localStorage.getItem('rapquiz_stats') || '{"gamesPlayed":0,"highScore":0,"totalScore":0,"badges":[],"correctAnswers":0,"wrongAnswers":0,"tourneyWins":0,"mpWins":0}');
             stats.gamesPlayed++;
             stats.mpGamesPlayed = (stats.mpGamesPlayed || 0) + 1;
-            stats.totalScore = (stats.totalScore || 0) + mpState.scoreMe;
-            if(mpState.scoreMe > stats.highScore) stats.highScore = mpState.scoreMe;
+            stats.totalScore = (stats.totalScore || 0) + finalMyScore;
+            stats.correctAnswers = (stats.correctAnswers || 0) + myCorrect;
+            stats.wrongAnswers = (stats.wrongAnswers || 0) + myWrong;
+            if(finalMyScore > stats.highScore) stats.highScore = finalMyScore;
             if(isTourneyWin) stats.tourneyWins = (stats.tourneyWins || 0) + 1;
             if(isMultiplayerWin) stats.mpWins = (stats.mpWins || 0) + 1;
             // Odznaki MP
