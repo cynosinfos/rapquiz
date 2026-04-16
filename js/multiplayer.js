@@ -81,6 +81,13 @@ function initSocket() {
             
             document.querySelector('.lifelines-bar').style.display = 'none';
             showView('gameView');
+            
+            const badge = document.getElementById('activeModeBadge');
+            if (badge) {
+                badge.textContent = data.isTourney ? "TRYB: TURNIEJ" : "TRYB: ONLINE";
+                badge.style.background = data.isTourney ? "var(--accent-red)" : "var(--accent-blue)";
+                badge.style.color = "#fff";
+            }
         });
 
         socket.on('next_question', (q) => {
@@ -139,8 +146,11 @@ function initSocket() {
             document.querySelector('.lifelines-bar').style.display = 'flex';
             
             showView('gameOverView');
-            document.getElementById('finalScore').textContent = `${mpState.scoreMe} PKT (Twój wynik)`;
-            document.getElementById('finalStreak').textContent = "-";
+            
+            // W trybie MP ukrywamy sekcję standardowych statystyk i uzywamy własnych tabel
+            const spStats = document.getElementById('singlePlayerFinalStats');
+            if (spStats) spStats.style.display = 'none';
+
             
             const msgEl = document.getElementById('gameOverMsg');
             let isTourneyWin = false;
@@ -215,6 +225,49 @@ function initSocket() {
                 });
                 boardHtml += '</table>';
                 scoreboardEl.innerHTML = boardHtml;
+            }
+            
+            // RENDERING HISTORII PYTAŃ (NOWOŚĆ)
+            const histContainer = document.getElementById('mpHistoryContainer');
+            if (histContainer && final.history) {
+                histContainer.style.display = 'block';
+                
+                let allPlayers = [ { id: socket.id, name: getUserName() + ' (TY)' } ];
+                mpState.opponents.forEach(o => {
+                    allPlayers.push({ id: o.id, name: o.name });
+                });
+                
+                let tbl = `<h3 style="color:var(--accent-blue); margin: 30px 0 10px 0; font-family:var(--font-main);">HISTORIA ODPOWIEDZI</h3>`;
+                tbl += `<div style="background:rgba(0,0,0,0.5); border:1px solid #444; border-radius:8px; padding:10px;"><table style="width:100%; border-collapse:collapse; text-align:center; font-size: 0.9rem;">`;
+                
+                // Nagłówki
+                tbl += `<tr><th style="padding:8px; border-bottom:1px solid #666; text-align:left; color:var(--text-dim);">Pytanie</th>`;
+                allPlayers.forEach(p => {
+                    tbl += `<th style="padding:8px; border-bottom:1px solid #666; color:var(--text-main); font-family:var(--font-mono);">${p.name.split(' ')[0]}</th>`;
+                });
+                tbl += `</tr>`;
+                
+                // Wiersze historyczne
+                final.history.forEach((hItem, idx) => {
+                    tbl += `<tr style="border-bottom:1px solid #333;">`;
+                    tbl += `<td style="padding:8px; text-align:left; color:#999; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${hItem.question}">${idx+1}. ${hItem.question}</td>`;
+                    
+                    allPlayers.forEach(p => {
+                        const correct = hItem.answers[p.id];
+                        let icon = `<span style="color:var(--text-dim);">-</span>`;
+                        if (correct === true) icon = `✅`;
+                        else if (correct === false) icon = `❌`;
+                        
+                        tbl += `<td style="padding:8px;">${icon}</td>`;
+                    });
+                    
+                    tbl += `</tr>`;
+                });
+                
+                tbl += `</table></div>`;
+                histContainer.innerHTML = tbl;
+            } else if (histContainer) {
+                histContainer.style.display = 'none';
             }
         });
         

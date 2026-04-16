@@ -544,6 +544,13 @@ function endGame() {
     if (!state.isGameActive) return;
     state.isGameActive = false;
     clearInterval(timerInterval);
+    
+    // Upewniamy się, że statystyki dla singla są resetowane i widoczne, a tabele MP ukryte
+    const spStats = document.getElementById('singlePlayerFinalStats');
+    if (spStats) spStats.style.display = 'block';
+    const mpHistory = document.getElementById('mpHistoryContainer');
+    if (mpHistory) mpHistory.style.display = 'none';
+    
     showView('gameOverView');
     
     const scoreEl = document.getElementById('gameScore');

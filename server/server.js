@@ -262,6 +262,7 @@ io.on('connection', (socket) => {
              p.alive = true;
          });
          room.answersThisRound = {};
+         room.history = [];
          
          io.to(room.id).emit('game_started', { players: room.players, isTourney: room.isTourney });
          setTimeout(() => startNextRound(room), 2000);
@@ -304,6 +305,7 @@ io.on('connection', (socket) => {
   function evaluateRound(room) {
       const q = room.questions[room.currentRound];
       const results = { correctIndex: q.correct };
+      const qHistoryItem = { question: q.question, answers: {} };
       
       let correctPlayers = room.players.filter(p => {
           if (!p.alive) return false;
@@ -315,6 +317,7 @@ io.on('connection', (socket) => {
       room.players.forEach(p => {
           if (!p.alive) {
               results[p.id] = { pointsEarned: 0, alive: false };
+              qHistoryItem.answers[p.id] = false;
               return;
           }
 
@@ -330,8 +333,11 @@ io.on('connection', (socket) => {
               if (room.isTourney) p.alive = false;
           }
           room.scores[p.id] += pts;
+          qHistoryItem.answers[p.id] = pCorrect;
           results[p.id] = { pointsEarned: pts, alive: p.alive };
       });
+      
+      room.history.push(qHistoryItem);
       
       io.to(room.id).emit('round_results', results);
       
@@ -361,7 +367,7 @@ io.on('connection', (socket) => {
           winnerId = 'draw';
       }
       
-      io.to(room.id).emit('multiplayer_game_over', { winnerId, scores: room.scores, isTourney: room.isTourney });
+      io.to(room.id).emit('multiplayer_game_over', { winnerId, scores: room.scores, isTourney: room.isTourney, history: room.history });
       
       delete rooms[room.id];
   }
