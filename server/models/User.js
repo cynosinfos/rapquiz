@@ -26,6 +26,12 @@ const UserSchema = new mongoose.Schema({
         games_played: { type: Number, default: 0 },
         wins: { type: Number, default: 0 },
         perfect_streaks: { type: Number, default: 0 },
+        correct_answers: { type: Number, default: 0 },
+        wrong_answers: { type: Number, default: 0 },
+        tournaments_won: { type: Number, default: 0 },
+        multiplayer_wins: { type: Number, default: 0 },
+        weekly_scores: { type: Map, of: Number, default: {} },
+        monthly_scores: { type: Map, of: Number, default: {} },
         achievements: [{ type: String }],
         // Statystyki zapamiętanych kół ratunkowych
         lifelines_used: {

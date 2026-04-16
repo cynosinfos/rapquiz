@@ -55,24 +55,6 @@ const RAPQUIZ_QUESTIONS = {
       "hint": "Przełom lat 90-tych, ten sam rok co zadebiutował Zip Skład."
     },
     {
-      "id": 1004,
-      "category": "1990-2010",
-      "difficulty": "trudny",
-      "question": "Z jakiej formacji wywodzi się brzmienie określane mianem 'Psycho rapu' (Magiczny Miecz)?",
-      "answers": [
-        "Zip Skład",
-        "Wzgórze Ya-Pa 3",
-        "Kaliber 44",
-        "Slums Attack"
-      ],
-      "correct": 2,
-      "tags": [
-        "kaliber44",
-        "psycho"
-      ],
-      "hint": "Pochodzą z Katowic."
-    },
-    {
       "id": 1005,
       "category": "1990-2010",
       "difficulty": "łatwy",
@@ -255,7 +237,7 @@ const RAPQUIZ_QUESTIONS = {
       "id": 1015,
       "category": "1990-2010",
       "difficulty": "trudny",
-      "question": "Na jakiej płycie i z jakiego roku pochodzi zjawiskowy debiut O.S.T.R.?",
+      "question": "Jaką nosi nawzę pierwsza płyta O.S.T.R.?",
       "answers": [
         "Masz to jak w banku ",
         "Tabasko ",
@@ -412,7 +394,7 @@ const RAPQUIZ_QUESTIONS = {
         "bolec",
         "film"
       ],
-      "hint": "Grał m.in w Pitbullu i Chłopaki Nie Płaczą."
+      "hint": "DWA."
     },
     {
       "id": 1024,
@@ -863,7 +845,7 @@ const RAPQUIZ_QUESTIONS = {
       "id": 1051,
       "category": "1990-2010",
       "difficulty": "średni",
-      "question": "Endefis to grupa, która podbiła serca wczesnych słuchaczy. Z jakiej warszawskiej dzielnicy się wywodzą?",
+      "question": "Endefis. Z jakiej warszawskiej dzielnicy się wywodzą?",
       "answers": [
         "Ursynów",
         "Jelonki",
@@ -1161,24 +1143,6 @@ const RAPQUIZ_QUESTIONS = {
         "zip"
       ],
       "hint": "Szejsetkilovolt."
-    },
-    {
-      "id": 1069,
-      "category": "1990-2010",
-      "difficulty": "łatwy",
-      "question": "Tede w latach 90 nagrywał pod pseudonimem...",
-      "answers": [
-        "Wujek Tede",
-        "Jacek Graniecki",
-        "Tas Da Fleia / TDF",
-        "Pan T"
-      ],
-      "correct": 2,
-      "tags": [
-        "tede",
-        "poczatki"
-      ],
-      "hint": "TDF."
     },
     {
       "id": 1070,
@@ -1835,23 +1799,6 @@ const RAPQUIZ_QUESTIONS = {
       "hint": "Wrogowie Liroya, razem z Rychiem P."
     },
     {
-      "id": 1125,
-      "category": "1990-2010",
-      "difficulty": "łatwy",
-      "question": "Co oznacza skrót K.A.S.T.A w zespole Donguralesko i Wall-E?",
-      "answers": [
-        "Każdy Atakuje Swoim Terenem Absolutnym",
-        "Kompania Antysystemowego Tworzenia Artystów",
-        "K.A.S.T.A Squad - po prostu Kasta",
-        "Karabin Automatyczny Strzelający Toną Amunicji"
-      ],
-      "correct": 2,
-      "tags": [
-        "kasta"
-      ],
-      "hint": "Po prostu KASTA Squad."
-    },
-    {
       "id": 1128,
       "category": "1990-2010",
       "difficulty": "łatwy",
@@ -2029,24 +1976,6 @@ const RAPQUIZ_QUESTIONS = {
         "kielce"
       ],
       "hint": "P.M. Cool Lee."
-    },
-    {
-      "id": 1150,
-      "category": "1990-2010",
-      "difficulty": "trudny",
-      "question": "Thinkadelic i ich 'Lek', to zespół, który stworzył pierwszych raperów w komercyjnych agencjach i serialach (Tede na klipie gra rolę). Kto należał do zespołu?",
-      "answers": [
-        "Człowiek Nowej Ery (CNE) i WSZ",
-        "Eldo i Jotuze",
-        "Spinache i Czarny",
-        "Pezet i Onar"
-      ],
-      "correct": 2,
-      "tags": [
-        "thinkadelic",
-        "spinache"
-      ],
-      "hint": "Spinache."
     },
     {
       "id": 1152,
@@ -2494,7 +2423,7 @@ const RAPQUIZ_QUESTIONS = {
       "id": 2015,
       "category": "1990-2010",
       "difficulty": "średni",
-      "question": "Zespół Donguralesko i Kaczora?",
+      "question": "Zespół Donguralesko i Kaczora to:",
       "answers": [
         "Slums Attack",
         "Trzeci Wymiar",
@@ -2506,23 +2435,6 @@ const RAPQUIZ_QUESTIONS = {
         "donguralesko"
       ],
       "hint": "Killaz."
-    },
-    {
-      "id": 2016,
-      "category": "1990-2010",
-      "difficulty": "łatwy",
-      "question": "Co oznacza w pełni nazwa zespołu O.S.T.R.?",
-      "answers": [
-        "Ostrość",
-        "Ostry Skład Twórców Rapu",
-        "O.S.T.R.",
-        "Nie ma rozwinięcia / Adam Ostrowski"
-      ],
-      "correct": 3,
-      "tags": [
-        "ostr"
-      ],
-      "hint": "Pochodzi od nazwiska."
     },
     {
       "id": 2018,
@@ -2559,24 +2471,6 @@ const RAPQUIZ_QUESTIONS = {
         "marysiastarosta"
       ],
       "hint": "Prawda."
-    },
-    {
-      "id": 2020,
-      "category": "1990-2010",
-      "difficulty": "łatwy",
-      "question": "Kto odpowiadał niemal w 100% za kultowe bity na płycie 'Muzyka Klasyczna' Pezeta?",
-      "answers": [
-        "Ajron",
-        "Noon",
-        "Returners",
-        "O.S.T.R."
-      ],
-      "correct": 1,
-      "tags": [
-        "pezet",
-        "noon"
-      ],
-      "hint": "Noon."
     },
     {
       "id": 2021,
@@ -2634,7 +2528,7 @@ const RAPQUIZ_QUESTIONS = {
       "id": 2026,
       "category": "1990-2010",
       "difficulty": "łatwy",
-      "question": "Utwór 'Głucha Noc' Peji miał problem prawny w 2003 roku z powodu nielegalnego sampla. Z czyjego utworu pochodził?",
+      "question": "Utwór 'Głucha Noc' Peji miał problem prawny w 2003 roku z powodu nielegalnego sampla. Kto był twórcą muzyki z której zaczerpnięto sampel?",
       "answers": [
         "Czesław Niemen",
         "Krzysztof Krawczyk",
@@ -2665,42 +2559,6 @@ const RAPQUIZ_QUESTIONS = {
         "parias"
       ],
       "hint": "Sokoła."
-    },
-    {
-      "id": 2032,
-      "category": "1990-2010",
-      "difficulty": "łatwy",
-      "question": "Album 'Wspólnicy' to dzieło duetu Bilon i Wilku, współtworzących...",
-      "answers": [
-        "WWO",
-        "Zip Skład",
-        "Hemp Gru",
-        "Kompile"
-      ],
-      "correct": 2,
-      "tags": [
-        "hempgru",
-        "wspolnicy"
-      ],
-      "hint": "HG."
-    },
-    {
-      "id": 2034,
-      "category": "1990-2010",
-      "difficulty": "średni",
-      "question": "Płyta 'Głos Wielkopolski' została wydana przez Slums Attack w którym roku?",
-      "answers": [
-        "2001",
-        "2005",
-        "2006",
-        "2008"
-      ],
-      "correct": 3,
-      "tags": [
-        "peja",
-        "slums"
-      ],
-      "hint": "Pod koniec dekady."
     },
     {
       "id": 2035,
@@ -2777,7 +2635,7 @@ const RAPQUIZ_QUESTIONS = {
       "id": 2044,
       "category": "1990-2010",
       "difficulty": "łatwy",
-      "question": "Bisz z Bydgoszczy znany jest z grupy...",
+      "question": "Zespół w którym występuje Bisz to:.",
       "answers": [
         "B.O.K.",
         "Rasmentalism",
@@ -3256,24 +3114,6 @@ const RAPQUIZ_QUESTIONS = {
       "hint": "DJ Bambus."
     },
     {
-      "id": 2104,
-      "category": "1990-2010",
-      "difficulty": "łatwy",
-      "question": "Znamienne słowa Tede z 00' to dyskusja, że Hip-Hop to biznes. Jak sie nazywa jego firma produkująca ciuchy?",
-      "answers": [
-        "PLNY Textylia",
-        "Stoprocent",
-        "Diamante Wear",
-        "Mass Denim"
-      ],
-      "correct": 0,
-      "tags": [
-        "plny",
-        "tede"
-      ],
-      "hint": "Polski Złoty Textylia = PLNY."
-    },
-    {
       "id": 2108,
       "category": "1990-2010",
       "difficulty": "trudny",
@@ -3530,7 +3370,7 @@ const RAPQUIZ_QUESTIONS = {
       "id": 2161,
       "category": "1990-2010",
       "difficulty": "łatwy",
-      "question": "Z jakiego legendarnego miasta obok Bydgoszczy wywodził się VNM, rapując o nim non stop jako 82-300?",
+      "question": "Z jakiego miasta obok Bydgoszczy wywodził się VNM, rapując o nim non stop jako 82-300?",
       "answers": [
         "Elbląg",
         "Toruń",
@@ -5724,24 +5564,6 @@ const RAPQUIZ_QUESTIONS = {
         "2115"
       ],
       "hint": "Rodzina to wszystko — i tytuł albumu."
-    },
-    {
-      "id": 3251,
-      "category": "2020-now",
-      "difficulty": "średni",
-      "question": "Który z artystów NIE jest członkiem kolektywu 2115?",
-      "answers": [
-        "White 2115",
-        "Kuqe 2115",
-        "Żabson",
-        "Flexxy 2115"
-      ],
-      "correct": 2,
-      "tags": [
-        "2115",
-        "zabson"
-      ],
-      "hint": "Ten artysta działa w ramach Internaziomal."
     },
     {
       "id": 3252,
