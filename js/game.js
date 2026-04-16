@@ -333,9 +333,17 @@ function handleAnswer(selectedIndex, btnElement) {
         if (btnElement) btnElement.classList.add('correct');
         const resolveTime = (Date.now() - state.startTime) / 1000;
         
-        let pts = 60;
+        let pts = 10;
+        let tLeft = (15 - resolveTime);
+        if (tLeft < 0) tLeft = 0;
+        
+        if (state.isEndless) {
+            pts = 10;
+        } else {
+            pts += Math.round(tLeft);
+        }
+        
         if (resolveTime <= 5) {
-            pts = 100;
             state.fastStreak = (state.fastStreak || 0) + 1;
             // TURBO: streak odpowiedzi poniżej 3 sekund
             if (resolveTime <= 3) {
@@ -360,7 +368,6 @@ function handleAnswer(selectedIndex, btnElement) {
                }
             }
         } else {
-            pts = 80;
             state.fastStreak = 0;
             state.ultraFastStreak = 0;
         }

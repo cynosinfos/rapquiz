@@ -325,9 +325,11 @@ io.on('connection', (socket) => {
           let pts = 0;
           let pCorrect = ans && ans.answerIndex === q.correct;
           if (pCorrect) {
-              pts += 2;
-              if (correctPlayers[0] && correctPlayers[0].id === p.id) pts += 1;
-              if (ans && ans.timeLeft >= 10) pts += 1;
+              pts = 10;
+              if (ans && typeof ans.timeLeft === 'number') {
+                  pts += Math.round(ans.timeLeft);
+              }
+
           } else {
               // IGRZYSKA - błędna odpowiedź lub jej brak to eliminacja
               if (room.isTourney) p.alive = false;

@@ -375,13 +375,14 @@ function renderAnswersMP(answers) {
 function updateMPStatsUI() {
     const container = document.getElementById('gameStatsContainer');
     if(!container) return;
-    let meDisplay = mpState.aliveMe ? `<span class="gold-text">${mpState.scoreMe}</span>` : `<span style="color:var(--accent-red); font-weight:bold;">☠️</span>`;
-    let html = `WYNIK (TY): ${meDisplay} | RUNDA: <span class="gold-text">${mpState.round}/20</span> | `;
+    let meDisplay = mpState.aliveMe ? `<span class="gold-text">${mpState.scoreMe}</span>` : `<span style="color:var(--accent-red); font-weight:bold;">☠️ WYELIMINOWANY</span>`;
     
-    html += mpState.opponents.map(o => {
-        let oppScore = o.alive ? `<span class="red-text">${o.score}</span>` : `<span style="color:var(--text-dim);">☠️</span>`;
-        return `${o.name}: ${oppScore}`;
+    let oppHtml = mpState.opponents.map(o => {
+        let oppStatus = o.alive ? `<span class="green-text" style="font-size:0.8rem;">W GRZE</span>` : `<span style="color:var(--text-dim);">☠️</span>`;
+        return `${o.name}: ${oppStatus}`;
     }).join(' | ');
+    
+    let html = `TWOJE PUNKTY: ${meDisplay} | RUNDA: <span class="gold-text">${mpState.round}/20</span> | RYWAL: ${oppHtml}`;
     container.innerHTML = html;
 }
 

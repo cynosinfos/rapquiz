@@ -408,6 +408,27 @@ async function openProfileModal() {
    const user = JSON.parse(userStr);
    document.getElementById('profNick').textContent = user.username;
    
+   try {
+       const token = localStorage.getItem('rapquiz_token');
+       const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:4000' : '';
+       if (token && token !== 'mock_token_local') {
+           const res = await fetch(`${API_URL}/api/auth/profile`, {
+               headers: { 'Authorization': `Bearer ${token}` }
+           });
+           const data = await res.json();
+           if (data.success && data.profile) {
+               let localStats = JSON.parse(localStorage.getItem('rapquiz_stats') || '{"gamesPlayed":0,"highScore":0,"totalScore":0,"badges":[],"correctAnswers":0,"wrongAnswers":0,"tourneyWins":0,"mpWins":0}');
+               localStats.gamesPlayed = data.profile.games_played || localStats.gamesPlayed;
+               localStats.totalScore = data.profile.total_score || localStats.totalScore;
+               localStats.correctAnswers = data.profile.correct_answers || localStats.correctAnswers;
+               localStats.wrongAnswers = data.profile.wrong_answers || localStats.wrongAnswers;
+               localStats.mpWins = data.profile.multiplayer_wins || localStats.mpWins;
+               localStats.tourneyWins = data.profile.tournaments_won || localStats.tourneyWins;
+               localStorage.setItem('rapquiz_stats', JSON.stringify(localStats));
+           }
+       }
+   } catch(e) { console.warn('Błąd synchronizacji profilu:', e); }
+   
    const stats = JSON.parse(localStorage.getItem('rapquiz_stats') || '{"gamesPlayed":0, "highScore":0, "totalScore":0, "badges":[], "correctAnswers":0, "wrongAnswers":0, "tourneyWins":0, "mpWins":0}');
    document.getElementById('profGames').textContent = stats.gamesPlayed || 0;
    document.getElementById('profHighscore').textContent = stats.highScore || 0;
