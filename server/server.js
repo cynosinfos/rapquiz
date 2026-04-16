@@ -130,9 +130,28 @@ mongoose.connect(MONGODB_URI)
   .then(() => console.log('✅ Połączono z MongoDB (RAPQUIZ).'))
   .catch(err => console.error('❌ Błąd połączenia z MongoDB:', err));
 
-// Testowy endpoint
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Serwer RAPQUIZ działa poprawie.' });
+// Testowy endpoint z diagnostyką bazy danych
+app.get('/health', async (req, res) => {
+    try {
+        const stateMapping = { 0: 'Odłączono (Brak łącza z bazą!)', 1: 'Połączono (Connected) ✅', 2: 'W trakcie łączenia (Connecting...)', 3: 'Rozłączanie...' };
+        const dbStateCode = mongoose.connection.readyState;
+        const dbStateText = stateMapping[dbStateCode] || 'Nieznany Status';
+        
+        let dbPing = 'Niedostępny';
+        if (dbStateCode === 1) {
+            await mongoose.connection.db.admin().ping();
+            dbPing = 'Sukces (Baza odpowiada poprawnie)';
+        }
+        
+        res.json({ 
+            status: 'ok', 
+            message: 'Serwer Gier RAPQUIZ działa poprawnie.',
+            mongodb_connection: dbStateText,
+            mongodb_ping_test: dbPing
+        });
+    } catch(err) {
+        res.status(500).json({ error: 'Błąd serwera', details: err.message });
+    }
 });
 
 // ── STRONY STATYCZNE (AdSense) ──
