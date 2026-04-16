@@ -126,58 +126,10 @@ function createRoom() {
 }
 
 async function dailyChallenge() {
-  const token = localStorage.getItem('rapquiz_token');
-  const userStr = localStorage.getItem('rapquiz_user');
-  if (!token || !userStr) {
-    openAuthModal();
-    return;
-  }
-  const user = JSON.parse(userStr);
-  
-  if(typeof showView === 'function') {
-      showView('dailySetupView');
-      document.getElementById('dailyDateLabel').textContent = 'Ładowanie...';
+  if (typeof window.showCustomAlert === 'function') {
+      showCustomAlert('WKRÓTCE! Tryb Codziennego Wyzwania pojawi się w jednej z najbliższych aktualizacji.');
   } else {
-      document.getElementById('menuView').style.display = 'none';
-      document.getElementById('dailySetupView').style.display = 'flex';
-  }
-  
-  try {
-     const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:4000' : '';
-     const res = await fetch(`${API_URL}/api/daily/status?user=${encodeURIComponent(user.username)}`);
-     const data = await res.json();
-     
-     if (data.success) {
-         document.getElementById('dailyDateLabel').textContent = data.date;
-         const btnStart = document.getElementById('btnStartDaily');
-         const errEl = document.getElementById('dailyError');
-         
-         if(data.played) {
-             btnStart.disabled = true;
-             btnStart.textContent = "JUŻ GRAŁEŚ DZIŚ!";
-             errEl.textContent = "Wróć jutro by sprawdzić nowe pytania i pobić rekord w rankingu.";
-         } else {
-             btnStart.disabled = false;
-             btnStart.textContent = "ODPAL WYZWANIE";
-             errEl.textContent = "";
-         }
-     }
-  } catch(err) {
-      console.warn('API error, using local fallback', err);
-      document.getElementById('dailyDateLabel').textContent = new Date().toISOString().split('T')[0];
-      const lastPlay = localStorage.getItem('rapquiz_dailyLastPlay');
-      const today = new Date().toISOString().split('T')[0];
-      const btnStart = document.getElementById('btnStartDaily');
-      const errEl = document.getElementById('dailyError');
-      if (lastPlay === today) {
-         btnStart.disabled = true;
-         btnStart.textContent = "JUŻ GRAŁEŚ DZIŚ!";
-         errEl.textContent = "Wróć jutro.";
-      } else {
-         btnStart.disabled = false;
-         btnStart.textContent = "ODPAL WYZWANIE";
-         errEl.textContent = "Lokalny tryb awaryjny (brak serwera).";
-      }
+      alert('WKRÓTCE!');
   }
 }
 
