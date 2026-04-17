@@ -2584,7 +2584,7 @@ const RAPQUIZ_QUESTIONS = {
       "difficulty": "łatwy",
       "question": "Co oznacza skrót JWP?",
       "answers": [
-        "Jedyna Prawdziwa Wiara",
+        "Jaśnie Wielmożni Panowie",
         "Ja Wypalam Piątkę",
         "Jesteśmy W Porządku",
         "Ja Wolę Piwo"
