@@ -91,13 +91,14 @@ function initSocket() {
         });
 
         socket.on('next_question', (q) => {
-            mpState.round++;
-            document.getElementById('questionText').textContent = `[${mpState.round}/20] ` + q.question;
+            mpState.round = q.roundNum || (mpState.round + 1);
             renderAnswersMP(q.answers);
             if (mpState.aliveMe) {
+                document.getElementById('questionText').textContent = `[${mpState.round}/20] ` + q.question;
                 startMPTimer();
             } else {
                 // Gracz martwy tylko ogląda
+                document.getElementById('questionText').innerHTML = `<span style="color:var(--accent-red)">☠️ ODPADŁEŚ!</span><br><span style="font-size:0.9rem; color:var(--text-dim)">OBSERWUJESZ DALSZĄ GRĘ...</span>`;
                 mpTimeLeft = 15;
                 Array.from(document.getElementById('answersGrid').children).forEach(b => b.disabled = true);
                 document.getElementById('timerBar').style.width = '0%';
@@ -409,6 +410,7 @@ window.multiplayerHandleAnswer = function(selectedIndex, btnElement) {
     allButtons.forEach(b => b.disabled = true);
     
     if (btnElement) btnElement.style.border = '2px solid var(--accent-yellow)';
+    document.getElementById('questionText').innerHTML = `<span style="color:var(--accent-yellow)">⏳ CZEKAJ NA INNYCH...</span>`;
     
     socket.emit('submit_answer', {
         roomCode: currentRoom,

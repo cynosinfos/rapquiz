@@ -263,6 +263,7 @@ io.on('connection', (socket) => {
          });
          room.answersThisRound = {};
          room.history = [];
+         room.isEvaluating = false;
          
          io.to(room.id).emit('game_started', { players: room.players, isTourney: room.isTourney });
          setTimeout(() => startNextRound(room), 2000);
@@ -277,11 +278,16 @@ io.on('connection', (socket) => {
           return;
       }
       
+      room.isEvaluating = false;
       room.answersThisRound = {};
       const q = room.questions[room.currentRound];
-      io.to(room.id).emit('next_question', { question: q.question, answers: q.answers });
+      io.to(room.id).emit('next_question', { 
+          question: q.question, 
+          answers: q.answers, 
+          roundNum: room.currentRound + 1 
+      });
       
-      room.roundTimer = setTimeout(() => { evaluateRound(room); }, 15500);
+      room.roundTimer = setTimeout(() => { evaluateRound(room, room.currentRound); }, 15500);
   }
 
   socket.on('submit_answer', (data) => {
@@ -297,12 +303,16 @@ io.on('connection', (socket) => {
           
           if (allAnswered) {
               clearTimeout(room.roundTimer);
-              evaluateRound(room);
+              evaluateRound(room, room.currentRound);
           }
       }
   });
 
-  function evaluateRound(room) {
+  function evaluateRound(room, roundIndex) {
+      if (roundIndex !== undefined && roundIndex !== room.currentRound) return;
+      if (room.isEvaluating) return;
+      room.isEvaluating = true;
+
       const q = room.questions[room.currentRound];
       const results = { correctIndex: q.correct };
       const qHistoryItem = { question: q.question, answers: {} };
@@ -405,7 +415,7 @@ io.on('connection', (socket) => {
                       // Jeśli opuszczający gracz blokował timer, wymuś sprawdzenie tury
                       if (Object.keys(r.answersThisRound).length >= activePlayers.length) {
                           clearTimeout(r.roundTimer);
-                          evaluateRound(r);
+                          evaluateRound(r, r.currentRound);
                       }
                   }
               }

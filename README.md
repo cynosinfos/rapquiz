@@ -1,13 +1,3 @@
----
-title: Rapquiz
-emoji: 🎤
-colorFrom: red
-colorTo: yellow
-sdk: docker
-app_port: 7860
-pinned: false
----
-
 # 🎤 RAPQUIZ — Quiz o Polskim Rapie
 
 > **Status**: Faza planowania — marzec 2026
@@ -195,7 +185,7 @@ Każde koło ratunkowe można użyć **max 1 raz**.
 | Baza danych pytań | JSON pliki (lokalnie) |
 | Auth & Rankings | Node.js + bcrypt + JWT + MongoDB |
 | Premiery muzyczne | Last.fm API lub Spotify API |
-| Hosting | Render.com / Vercel / GitHub Pages |
+| Hosting | Render.com |
 
 ---
 

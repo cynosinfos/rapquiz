@@ -4,7 +4,7 @@ Gratulacje! Gra jest technicznie gotowa do lotu. Ten dokument zawiera wszystko, 
 
 ## 1. Wdrożenie na Produkcję (Deployment)
 
-Obecnie gra jest przygotowana do działania na platformie **Render.com** lub **Vercel / Hugging Face Spaces**.
+Obecnie gra jest przygotowana do działania na platformie **Render.com**.
 
 ### Backend (Serwer):
 - **Adres serwera**: Jeśli zmienisz serwer, zaktualizuj zmienną `API_URL` w plikach `js/menu.js` oraz `js/multiplayer.js`.
