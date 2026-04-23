@@ -157,6 +157,14 @@ app.get('/o-projekcie', (req, res) => {
   res.sendFile(path.join(__dirname, '../o-projekcie.html'));
 });
 
+app.get('/polityka-prywatnosci', (req, res) => {
+  res.sendFile(path.join(__dirname, '../polityka-prywatnosci.html'));
+});
+
+app.get('/regulamin', (req, res) => {
+  res.sendFile(path.join(__dirname, '../regulamin.html'));
+});
+
 // ── FORMULARZ KONTAKTOWY ──
 app.post('/api/contact', async (req, res) => {
   try {
